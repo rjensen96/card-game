@@ -1,18 +1,41 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+    <h1>Join a room {{ this.getName }}</h1>
+    <input type="text" placeholder="Name" /><br />
+    <input type="text" placeholder="Room" /><br />
+    <button v-on:click="pingServer">Join</button>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import HelloWorld from "@/components/HelloWorld.vue"; // @ is an alias to /src
+import { Vue } from "vue-property-decorator";
+import io from "socket.io-client";
 
-@Component({
-  components: {
-    HelloWorld,
+// below also does work and doesn't have the stupid vetur red underline.
+export default Vue.extend({
+  name: "Home",
+  data() {
+    return {
+      socket: io(),
+      users: [],
+    };
   },
-})
-export default class Home extends Vue {}
+  created() {
+    this.socket.on("usersUpdate", (data) => {
+      console.log("from websocket:", data);
+      this.users = data.users;
+    });
+  },
+  computed: {
+    getName(): string {
+      return this.$store.state.name;
+    },
+  },
+  methods: {
+    pingServer(): void {
+      console.log("emitting...");
+      this.$socket.emit("blahdump", "WHAT");
+    },
+  },
+});
 </script>
