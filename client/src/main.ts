@@ -27,8 +27,11 @@ new Vue({
     connect: function () {
       console.log("ws connected!");
     },
-    usersUpdate: function (data) {
-      // console.log("the users data thing!", data);
+    roomNotification: function (data) {
+      console.log("roomNotification:", data);
+    },
+    joinConfirmation: function (data) {
+      console.log("joinConfirmation:", data);
     },
   },
   render: (h) => h(App),

@@ -1,9 +1,9 @@
 <template>
   <div class="home">
     <h1>Join a room {{ this.getName }}</h1>
-    <input type="text" placeholder="Name" /><br />
-    <input type="text" placeholder="Room" /><br />
-    <button v-on:click="pingServer">Join</button>
+    <input type="text" placeholder="Name" v-model="user" /><br />
+    <input type="text" placeholder="Room" v-model="room" /><br />
+    <button v-on:click="joinRoom()">Join</button>
   </div>
 </template>
 
@@ -11,20 +11,14 @@
 import { Vue } from "vue-property-decorator";
 import io from "socket.io-client";
 
-// below also does work and doesn't have the stupid vetur red underline.
 export default Vue.extend({
   name: "Home",
   data() {
     return {
       socket: io(),
-      users: [],
+      user: "",
+      room: "",
     };
-  },
-  created() {
-    this.socket.on("usersUpdate", (data) => {
-      console.log("from websocket:", data);
-      this.users = data.users;
-    });
   },
   computed: {
     getName(): string {
@@ -32,9 +26,18 @@ export default Vue.extend({
     },
   },
   methods: {
-    pingServer(): void {
-      console.log("emitting...");
-      this.$socket.emit("blahdump", "WHAT");
+    joinRoom(): void {
+      if (!this.user || !this.room) {
+        // bail if values not supplied.
+        return;
+      }
+
+      const payload = {
+        user: this.user,
+        room: this.room,
+      };
+      this.$socket.emit("joinRoom", payload);
+      this.$router.push("About");
     },
   },
 });
