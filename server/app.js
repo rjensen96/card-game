@@ -1,3 +1,6 @@
+const { Server } = require("socket.io");
+
+const debug = require("debug")("app4");
 const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
@@ -49,4 +52,46 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-module.exports = app;
+// refactoring to remove the bin/www files: http://expressjs.com/en/guide/migrating-4.html#app-gen
+// module.exports = app;
+
+app.set("port", process.env.PORT || 3000);
+
+const server = app.listen(app.get("port"), function () {
+  debug("Express server listening on port " + server.address().port);
+});
+
+/**************** SOCKET IO CONFIG *****************/
+
+const io = new Server(server, {
+  cors: true,
+  origins: ["http://localhost:8080"],
+});
+
+// CONNECTING TO ROOMS:
+// https://stackoverflow.com/questions/19150220/creating-rooms-in-socket-io
+
+io.on("connection", (socket) => {
+  console.log("client connected");
+  // socket.on("joinRoom", (data) => socket.emit("usersUpdate", "BOOM SERVER!"));
+  socket.on("joinRoom", (data) => {
+    console.log("attempting to join ", data.room);
+    socket.join(data.room);
+
+    // tell the socket that it joined successfully
+    io.to(socket.id).emit("joinConfirmation", data);
+
+    // tell the room who joined
+    io.to(data.room).emit(
+      "roomNotification",
+      `${data.user} has joined ${data.room}`
+    );
+  });
+
+  socket.on("chatMessage", (data) => {
+    console.log("chat:", data);
+    io.to(data.room).emit("chatMessage", data);
+  });
+});
+
+app.set("socketio", io);
