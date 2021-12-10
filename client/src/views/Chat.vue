@@ -15,7 +15,8 @@ import { ChatMessage } from "../types/chat-message";
 
 export default Vue.extend({
   mounted() {
-    if (!this.user || !this.room) {
+    if (!this.$store.state.user || !this.$store.state.room) {
+      console.log("YOU'RE TOAST! REROUTING!");
       this.$router.push("/");
     }
   },
