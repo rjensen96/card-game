@@ -29,4 +29,8 @@ async function setProperty(path, value) {
   }
 }
 
+// todo: if this gets boggy, have a variable for 'hasChanges' or something that read can use.
+// that way we can use a cached version of the db whenever possible.
+// granted, in the future this won't really matter because I'll be using Mongo
+
 module.exports = { setDB, setProperty };

@@ -24,6 +24,32 @@ async function getProperty(path) {
   }
 }
 
-// getProperty("rooms.abc.users").then((data) => console.log(data));
+async function hasProperty(path) {
+  try {
+    const db = await getDB();
+    return _.has(db, path);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
-module.exports = { getDB, getProperty };
+async function getGamenamesInRoom(roomId) {
+  try {
+    const db = await getDB();
+    if (!_.has(db, `rooms.${roomId}.users`)) {
+      return [];
+    }
+
+    const socketIds = _.get(db, `rooms.${roomId}.users`);
+    console.log("socketids...", socketIds);
+    const gamenames = socketIds.map((socketId) => {
+      return db.users[socketId].gamename;
+    });
+
+    return gamenames;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+module.exports = { getDB, getProperty, hasProperty, getGamenamesInRoom };
