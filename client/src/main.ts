@@ -6,7 +6,7 @@ import VueSocketIO from "vue-socket.io";
 import SocketIO from "socket.io-client";
 
 Vue.config.productionTip = false;
-const socketConnection = SocketIO("http://localhost:3000");
+const socketConnection = SocketIO("http://localhost:8080");
 
 Vue.use(
   new VueSocketIO({
@@ -32,6 +32,12 @@ new Vue({
     },
     joinConfirmation: function (data) {
       console.log("joinConfirmation:", data);
+    },
+    createConfirmation: function (data) {
+      console.log("createConfirmation:", data);
+    },
+    joinRejection: function (data) {
+      console.log("JOIN REJECTED:", data.reason);
     },
   },
   render: (h) => h(App),
