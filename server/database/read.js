@@ -52,4 +52,33 @@ async function getGamenamesInRoom(roomId) {
   }
 }
 
-module.exports = { getDB, getProperty, hasProperty, getGamenamesInRoom };
+/**
+ * Returns an array of the data that is safe to send to all players in a room about each player in the room.
+ * @param {String} roomId
+ */
+async function getPublicDataInRoom(roomId) {
+  const db = await getDB();
+
+  if (!_.has(db, `rooms.${roomId}.users`)) {
+    return [];
+  }
+
+  const socketIds = _.get(db, `rooms.${roomId}.users`);
+  const publicData = socketIds.map((socketId) => {
+    const obj = {};
+    obj.gamename = db.users[socketId].gamename;
+    obj.points = db.users[socketId].points;
+    obj.phase = db.users[socketId].phase;
+    return obj;
+  });
+
+  return publicData;
+}
+
+module.exports = {
+  getDB,
+  getProperty,
+  hasProperty,
+  getGamenamesInRoom,
+  getPublicDataInRoom,
+};

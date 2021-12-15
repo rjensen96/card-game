@@ -17,24 +17,29 @@ router.get("/", function (req, res, next) {
   res.json(rooms);
 });
 
+// TODO: catch more errors in here? there are potentially unhandled exceptions.
 /**
  * POST to join a room.
  */
 router.post("/:roomId/join", async (req, res, next) => {
   // https://stackoverflow.com/questions/18856190/use-socket-io-inside-a-express-routes-file
-  const io = req.app.get("socketio");
+  const io = req.io;
   const targetRoomId = req.params.roomId.toUpperCase();
 
   // check if room exists.
   // if not -> send 404
   // if so -> join socket to room.
   const roomExists = await db.hasProperty(`rooms.${targetRoomId}`);
-  if (roomExists) {
+  const socket = io.sockets.sockets.get(req.body.socketId);
+  if (roomExists && socket) {
     // add user socketId to room
     let socketsInRoom = await db.getProperty(`rooms.${targetRoomId}.users`);
     socketsInRoom.push(req.body.socketId);
     socketsInRoom = [...new Set(socketsInRoom)]; // ensure sockets are only in there once
     await db.setProperty(`rooms.${targetRoomId}.users`, socketsInRoom);
+
+    // subscribe the socket to the room
+    socket.join(targetRoomId);
 
     // add user to users
     const player = new Player(req.body.socketId, targetRoomId);
@@ -43,8 +48,17 @@ router.post("/:roomId/join", async (req, res, next) => {
     res.status(404).send(`Room ${targetRoomId} does not exist.`);
   }
 
-  const playersInRoom = await db.getGamenamesInRoom(targetRoomId);
-  res.json({ roomId: targetRoomId, playersInRoom });
+  const roomPlayerData = await db.getPublicDataInRoom(targetRoomId);
+
+  // tell the room somebody joined and send playersInRoom
+  // TODO: search everywhere for playerJoined and change that to playersInRoom
+  try {
+    io.to(targetRoomId).emit("roomPlayerData", roomPlayerData);
+  } catch (error) {
+    console.error(error);
+  }
+
+  res.json({ roomId: targetRoomId, roomPlayerData });
 });
 
 /**

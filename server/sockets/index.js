@@ -1,5 +1,25 @@
 const { Server } = require("socket.io");
 const db = require("../database");
+const _ = require("lodash");
+const { GameRoom, Player } = require("../types/types");
+
+// todo: should probably convert this entire file to typescript so that I can use types.
+// or, I guess I could just make factories like I was planning.
+
+// next steps on client:
+// improve the game UI
+// make a waiting room that people sit in after they join where their names bubble up.
+// make a start button that people can click
+
+// OK NEW NOTES ON CLIENT:
+/*
+
+  1. "CREATE ROOM" / ROOM CODE:
+  2. Waiting room... start game button
+  3. Then, the game itself.
+
+*/
+
 let io_;
 
 /**
@@ -9,42 +29,128 @@ let io_;
 function initializeIO(io) {
   io_ = io;
   io.on("connection", (socket) => {
-    console.log("client connected");
-    // todo: since below works, refactor this way more to make a separate file for initializing the socket and assigining handlers.
-    // then, here, just call initializeSocket(socket);
+    console.log("client connected", socket.id);
     // ALSO TODO: make factories for room, user... functions for dealCards, makeDeck, etc.
-    setSocketJoinHandler(socket);
-    setSocketChatHandler(socket);
+    // handleJoin(socket);
+    handleCreateRoom(socket);
+    handleDisconnect(socket);
+    handleChat(socket);
+    handleSetGamename(socket); // to be implemented... but should probably just use a route.
   });
 }
 
-function setSocketJoinHandler(socket) {
-  // CONNECTING TO ROOMS:
-  // https://stackoverflow.com/questions/19150220/creating-rooms-in-socket-io
-  socket.on("joinRoom", (data) => {
-    console.log("joining:", data.room);
+// update: below should not be used because this is an http route now.
+// also todo: freaking standardize if you're saying 'user' or 'player', it's too confusing
+//
+// function handleJoin(socket) {
+//   // CONNECTING TO ROOMS:
+//   // https://stackoverflow.com/questions/19150220/creating-rooms-in-socket-io
+//   socket.on("joinRoom", async (data) => {
+//     const targetRoom = data.roomCode.toUpperCase();
+//     const roomExists = await db.getProperty(`rooms.${targetRoom}`);
 
-    // join the room
-    socket.join(data.room);
+//     if (!roomExists) {
+//       console.log("JOIN REJECTED:", targetRoom);
+//       data.reason = "Room does not exist.";
+//       io_.to(socket.id).emit("joinRejection", data);
+//       return;
+//     }
 
-    // tell the socket that it joined successfully
-    io_.to(socket.id).emit("joinConfirmation", data);
+//     // join the roomCode
+//     socket.join(targetRoom);
 
-    // add user to the room (will also create room if doesn't exist.)
-    db.getProperty(`rooms.${data.room}.users`).then((usersInRoom) => {
-      const arrUsers = usersInRoom ? [...usersInRoom, data.user] : [data.user];
-      // console.log("users in room:", arrUsers);
-      db.setProperty(`rooms.${data.room}.users`, arrUsers);
-    });
+//     // add user to the room
+//     const player = new Player(socket.id, targetRoom);
 
-    // tell the room who joined
+//     // middleware for sockets?
+//     // https://socket.io/docs/v4/middlewares/
+
+//     const socketsInRoom = await db.getProperty(`rooms.${targetRoom}.users`);
+
+//     if (!socketsInRoom.includes(player.socketId)) {
+//       socketsInRoom.push(player.socketId);
+//       await db.setProperty(`rooms.${targetRoom}.users`, socketsInRoom);
+//     }
+
+//     // tell the socket that it joined successfully
+//     io_.to(socket.id).emit("joinConfirmation", {
+//       roomCode: targetRoom,
+//       playersInRoom: socketsInRoom,
+//     });
+
+//     // add player to 'users' object in db
+//     await db.setProperty(`users.${player.socketId}`, player);
+
+//     // tell the room somebody joined (but we don't yet know whomst)
+//     io_.to(targetRoom).emit("playerJoined", { gamename: "notyetprovided" });
+//   });
+// }
+
+const getRandomRoomCode = () => {
+  const minChar = "A".charCodeAt(0);
+  const maxChar = "Z".charCodeAt(0);
+  const charCodes = [];
+  for (let i = 0; i < 4; i++) {
+    charCodes.push(
+      Math.floor(Math.random() * (maxChar - minChar + 1)) + minChar
+    );
+  }
+  return String.fromCharCode(...charCodes);
+};
+
+function handleCreateRoom(socket) {
+  socket.on("createRoom", async (data) => {
+    const dbRooms = await db.getProperty("rooms");
+    const roomsList = dbRooms ? Object.keys(dbRooms) : [];
+
+    // get new UNIQUE room key.
+    let newRoomCode = "";
+    do {
+      newRoomCode = getRandomRoomCode();
+    } while (roomsList.includes(newRoomCode));
+
+    // create the room in db
+    const room = new GameRoom(newRoomCode);
+    await db.setProperty(`rooms.${newRoomCode}`, room);
+
+    // add player to the room
+    const player = new Player(socket.id, newRoomCode);
+    await db.setProperty(`rooms.${newRoomCode}.users`, [player.socketId]);
+
+    // add player to 'users' object in db
+    await db.setProperty(`users.${player.socketId}`, player);
+
+    // join the *socket* room
+    socket.join(newRoomCode);
+
+    const roomPlayerData = await db.getPublicDataInRoom(newRoomCode);
+
+    // todo: emit a create confirmation then handle that in client
     io_
-      .to(data.room)
-      .emit("roomNotification", `${data.user} has joined ${data.room}`);
+      .to(socket.id)
+      .emit("createConfirmation", { roomCode: newRoomCode, roomPlayerData });
   });
 }
 
-function setSocketChatHandler(socket) {
+function handleDisconnect(socket) {
+  socket.on("disconnect", async (reason) => {
+    console.log("client disconnected", socket.id);
+    db.deleteUserBySocketId(socket.id);
+    // notify room that user left?
+  });
+}
+
+function handleSetGamename(socket) {
+  socket.on("setGamename", async (data) => {
+    console.log("setting gamename for socket: ", socket.id);
+    await db.setProperty(`users.${socket.id}.gamename`, data.gamename);
+    const room = await db.getProperty(`users.${socket.id}.room`);
+    const roomPlayerData = await db.getPublicDataInRoom(room);
+    io_.to(room).emit("roomPlayerData", roomPlayerData);
+  });
+}
+
+function handleChat(socket) {
   socket.on("chatMessage", (data) => {
     // console.log("chat:", data);
     io_.to(data.room).emit("chatMessage", data);
