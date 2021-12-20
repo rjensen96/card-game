@@ -39,6 +39,9 @@ new Vue({
     joinRejection: function (data) {
       console.log("JOIN REJECTED:", data.reason);
     },
+    gameStarted: function (data) {
+      router.push("Game");
+    },
   },
   render: (h) => h(App),
 }).$mount("#app");

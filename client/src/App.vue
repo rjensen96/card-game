@@ -33,6 +33,8 @@ body {
   right: 0px;
   top: 0px;
   bottom: 0px;
+  background-color: white;
+  z-index: 10;
 
   border-left: 1px solid #cecece;
 

@@ -118,22 +118,4 @@ input {
   text-transform: uppercase;
   text-align: center;
 }
-
-button {
-  color: white;
-  background-color: #4caf50;
-  border: none;
-  border-radius: 5px;
-  height: 40px;
-  width: 90px;
-  font-size: 18px;
-  cursor: pointer;
-  transition-duration: 200ms;
-}
-
-button:hover {
-  background-color: #54c558;
-  transition: all;
-  transition-duration: 300ms;
-}
 </style>
