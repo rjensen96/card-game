@@ -29,8 +29,25 @@ async function setProperty(path, value) {
   }
 }
 
+async function dealCardsInRoom(roomId) {
+  try {
+    const db = await getDB();
+    const { drawPile, users } = db.rooms[roomId];
+    console.log("users:", users);
+    for (let i = 0; i < 10; i++) {
+      users.forEach((userId) => {
+        db.users[userId].hand.push(drawPile.pop());
+      });
+    }
+
+    return setDB(db);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 // todo: if this gets boggy, have a variable for 'hasChanges' or something that read can use.
 // that way we can use a cached version of the db whenever possible.
 // granted, in the future this won't really matter because I'll be using Mongo
 
-module.exports = { setDB, setProperty };
+module.exports = { setDB, setProperty, dealCardsInRoom };

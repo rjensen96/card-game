@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const db = require("../database");
 const _ = require("lodash");
 const { GameRoom, Player } = require("../types/types");
+const { sendPlayersOwnData } = require("./pushResponses");
 
 // todo: should probably convert this entire file to typescript so that I can use types.
 // or, I guess I could just make factories like I was planning.
@@ -32,10 +33,13 @@ function initializeIO(io) {
     console.log("client connected", socket.id);
     // ALSO TODO: make factories for room, user... functions for dealCards, makeDeck, etc.
     // handleJoin(socket);
+    // todo: make these lines look more like:
+    // socket.on("eventName", functionName);
     handleCreateRoom(socket);
     handleDisconnect(socket);
     handleChat(socket);
     handleSetGamename(socket); // to be implemented... but should probably just use a route.
+    handleStartGame(socket);
   });
 }
 
@@ -144,9 +148,24 @@ function handleSetGamename(socket) {
   socket.on("setGamename", async (data) => {
     console.log("setting gamename for socket: ", socket.id);
     await db.setProperty(`users.${socket.id}.gamename`, data.gamename);
-    const room = await db.getProperty(`users.${socket.id}.room`);
-    const roomPlayerData = await db.getPublicDataInRoom(room);
-    io_.to(room).emit("roomPlayerData", roomPlayerData);
+    const roomId = await db.getProperty(`users.${socket.id}.room`);
+    const roomPlayerData = await db.getPublicDataInRoom(roomId);
+    io_.to(roomId).emit("roomPlayerData", roomPlayerData);
+  });
+}
+
+function handleStartGame(socket) {
+  socket.on("startGame", async (data) => {
+    const ownPlayerData = await db.getProperty(`users.${socket.id}`);
+    const { room } = ownPlayerData;
+    // todo: deal 10 cards to everybody in room.
+    await db.dealCardsInRoom(room);
+
+    // todo: setup a way for a PROCTOR to notify everybody that 10 cards were dealt.
+    // get each socket, and to each socket send that
+    await sendPlayersOwnData(room, io_);
+
+    io_.to(room).emit("gameStarted");
   });
 }
 

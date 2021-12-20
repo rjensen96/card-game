@@ -5,7 +5,7 @@ const {
   getGamenamesInRoom,
   getPublicDataInRoom,
 } = require("./read");
-const { setProperty, setDB } = require("./write");
+const { setProperty, setDB, dealCardsInRoom } = require("./write");
 
 const { deleteUserBySocketId } = require("./delete");
 
@@ -18,6 +18,7 @@ const db = {
   setProperty,
   setDB,
   deleteUserBySocketId,
+  dealCardsInRoom,
 };
 
 module.exports = db;
