@@ -36,4 +36,23 @@ export default Vue.extend({
 });
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss">
+button {
+  color: white;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 5px;
+  height: 40px;
+  min-width: 90px;
+  margin: 0px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  transition-duration: 200ms;
+}
+
+button:hover {
+  background-color: #54c558;
+  transition: all;
+  transition-duration: 300ms;
+}
+</style>
