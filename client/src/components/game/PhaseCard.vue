@@ -49,7 +49,7 @@ export default Vue.component("phase-card", {
 .card {
   height: 100px;
   min-width: 70px;
-  margin: 10px;
+  margin: 0px 5px;
   display: flex;
   border-radius: 5px;
   box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.15);

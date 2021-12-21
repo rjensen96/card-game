@@ -28,7 +28,9 @@ export default Vue.component("own-hand", {
 <style lang="scss" scoped>
 .container {
   display: flex;
-  justify-content: space-between;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
   border-top: 1px solid #bebebe;
 }
 </style>
