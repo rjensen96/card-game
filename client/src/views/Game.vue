@@ -1,27 +1,25 @@
 <template>
   <div id="game-container">
-    <!-- <div id="drawer">DRAWER</div> -->
-    <div id="table">
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>Hello Game</h1>
-      <h1>HENLO Game</h1>
+    <table-set v-for="player in players" :key="player.name" :player="player" />
+    <div id="hand">
+      <own-hand />
     </div>
-    <div id="hand">HAND</div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-export default Vue.extend({});
+import OwnHand from "../components/game/OwnHand.vue";
+import TableSet from "../components/game/TableSet.vue";
+import { Player } from "../types/player";
+export default Vue.extend({
+  components: { OwnHand, TableSet },
+  computed: {
+    players(): Player[] {
+      return this.$store.state.playersInRoom;
+    },
+  },
+});
 </script>
 
 <style lang="scss" scoped>
@@ -29,44 +27,19 @@ export default Vue.extend({});
 //https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Introduction#grid_layout
 #game-container {
   display: flex;
-  height: 100%;
-  margin: 30px 0px 150px 0px;
-
-  //   display: grid;
-  //   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  //   grid-template-rows: auto;
-}
-
-#table {
-  background-color: blue;
-  color: white;
-  flex-grow: 1;
-  //   grid-row: 1/4;
-  //   grid-column: 1 / 6;
-}
-
-#drawer {
-  background-color: green;
-  //   grid-area: "drawer";
-  //   grid-row: 1/4;
-  //   min-height: 500px;
-  position: fixed;
-  right: 0px;
-  top: 0px;
-  height: 100%;
-  z-index: 1;
+  margin: 70px 60px 150px 0px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 #hand {
-  background-color: red;
+  display: flex;
+  background-color: white;
   position: fixed;
   height: 150px;
   bottom: 0px;
-  width: 100%;
+  width: 100vw;
   z-index: 0;
-
-  //   grid-area: "hand";
-  //   grid-row: 5/6;
-  //   grid-column: 1/7;
 }
 </style>
