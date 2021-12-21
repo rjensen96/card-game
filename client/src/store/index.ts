@@ -10,7 +10,6 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
   const playerArray: Player[] = data.map((player: any) => {
     const playerData: Player = {
       gamename: player.gamename,
-      hand: player.hand,
       phase: player.phase,
       points: player.points,
       key: Math.random(),
@@ -23,27 +22,35 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
 
 export default new Vuex.Store({
   state: {
-    user: "",
+    gamename: "",
     roomCode: "",
     chats: getEmptyChatMessageArray(),
     playersInRoom: getEmptyPlayerArray(),
+    hand: [],
+    phase: 0,
+    points: 0,
   },
   mutations: {
     addPlayer(state, gamename) {
-      // gamename is always notyetprovided to begin with. Users enter that once they're in the room.
-
-      // if (gamename !== "notyetprovided") {
-      //   const idx = state.playersInRoom.indexOf("notyetprovided");
-      //   state.playersInRoom[idx] = gamename;
-      // } else {
       state.playersInRoom.push(gamename);
-      // }
+    },
+    setGamename(state, gamename) {
+      state.gamename = gamename;
     },
     setPlayersInRoom(state, playersInRoom) {
       state.playersInRoom = playersInRoom;
     },
     setRoomCode(state, roomCode) {
       state.roomCode = roomCode;
+    },
+    setHand(state, hand) {
+      state.hand = hand;
+    },
+    setPoints(state, points) {
+      state.points = points;
+    },
+    setPhase(state, phase) {
+      state.phase = phase;
     },
     setInitialRoomState(state, data) {
       state = { ...state, ...data };
@@ -70,13 +77,14 @@ export default new Vuex.Store({
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
     },
-    // SOCKET_playersInRoom({ commit }, data) {
-    //   console.log("socket_playerjoined:", data);
-    //   const playersToAdd = getPlayerArrayFromData(data.playersInRoom);
-    //   commit("setPlayersInRoom", playersToAdd);
-    // },
+    SOCKET_ownPlayerData({ commit }, data) {
+      console.log("got ownplayerdata:", data);
+      commit("setHand", data.hand);
+      commit("setPoints", data.points);
+      commit("setPhase", data.phase);
+    },
     SOCKET_roomPlayerData({ commit }, data) {
-      console.log("got roomplayerdata");
+      console.log("got roomplayerdata", data);
       const newPlayersData = getPlayerArrayFromData(data);
       commit("setPlayersInRoom", newPlayersData);
     },

@@ -71,9 +71,8 @@ export default Vue.component("waiting-room", {
       };
 
       if (isLetters(this.nameInput)) {
-        console.log("confirming: ", this.$socket.id);
         this.$socket.emit("setGamename", { gamename: this.nameInput });
-        console.log("postconfirm: ", this.$socket.id);
+        this.$store.commit("setGamename", this.nameInput);
         this.confirmedName = true;
       }
     },
