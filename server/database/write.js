@@ -33,7 +33,6 @@ async function dealCardsInRoom(roomId) {
   try {
     const db = await getDB();
     const { drawPile, users } = db.rooms[roomId];
-    console.log("users:", users);
     for (let i = 0; i < 10; i++) {
       users.forEach((userId) => {
         db.users[userId].hand.push(drawPile.pop());

@@ -9,6 +9,7 @@ class Player {
   constructor(socketId, roomName) {
     this.gamename = "";
     this.socketId = socketId;
+    this.completedPhase = false;
     this.room = roomName;
     this.hand = [];
     this.points = 0;
@@ -20,9 +21,11 @@ class GameRoom {
   roomName;
   users = [];
   skipped = [];
-  playerUp;
   drawPile = [];
   discardPile = [];
+  drew = false;
+  played = false;
+  discarded = false;
 
   constructor(roomName) {
     this.roomName = roomName;
@@ -32,11 +35,12 @@ class GameRoom {
 
   generateDeck() {
     for (let color = 1; color < 5; color++) {
-      for (let value = 0; value < 12; value++) {
+      for (let value = 1; value < 13; value++) {
         const card = {
           value,
           text: value.toFixed(0),
           color,
+          key: "" + color + value,
         };
         this.drawPile.push(card);
       }

@@ -2,7 +2,12 @@ const { Server } = require("socket.io");
 const db = require("../database");
 const _ = require("lodash");
 const { GameRoom, Player } = require("../types/types");
-const { sendPlayersOwnData } = require("./pushResponses");
+const {
+  sendPlayersOwnData,
+  sendDrawDiscard,
+  sendGameState,
+} = require("./pushResponses");
+const { rotatePlayerUp, drawCard, discard } = require("../gameflow");
 
 // todo: should probably convert this entire file to typescript so that I can use types.
 // or, I guess I could just make factories like I was planning.
@@ -36,10 +41,12 @@ function initializeIO(io) {
     // todo: make these lines look more like:
     // socket.on("eventName", functionName);
     handleCreateRoom(socket);
-    handleDisconnect(socket);
     handleChat(socket);
+    handleDisconnect(socket);
+    handleDiscard(socket);
     handleSetGamename(socket); // to be implemented... but should probably just use a route.
     handleStartGame(socket);
+    handleTakeCard(socket);
   });
 }
 
@@ -154,18 +161,41 @@ function handleSetGamename(socket) {
   });
 }
 
+// todo: check if room is already started to prevent people from doing stupid crap
 function handleStartGame(socket) {
   socket.on("startGame", async (data) => {
     const ownPlayerData = await db.getProperty(`users.${socket.id}`);
     const { room } = ownPlayerData;
+
+    // get things rolling
+    await rotatePlayerUp(room);
+
     // todo: deal 10 cards to everybody in room.
     await db.dealCardsInRoom(room);
 
     // todo: setup a way for a PROCTOR to notify everybody that 10 cards were dealt.
     // get each socket, and to each socket send that
     await sendPlayersOwnData(room, io_);
+    await sendDrawDiscard(room, io_);
+
+    // set the playerUp and drew, played, discarded to false
+    await sendGameState(room, io_);
+
+    // todo: send the phases object to the clients.
 
     io_.to(room).emit("gameStarted");
+  });
+}
+
+function handleTakeCard(socket) {
+  socket.on("takeCard", async (data) => {
+    drawCard(io_, socket.id, data.pileName);
+  });
+}
+
+function handleDiscard(socket) {
+  socket.on("discard", async (data) => {
+    discard(io_, socket.id, data);
   });
 }
 
