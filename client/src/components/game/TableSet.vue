@@ -2,8 +2,11 @@
   <div class="container">
     <h2>{{ displayName }}</h2>
     <div class="cardArea">
-      <div class="cardSet" v-for="(phaseSet, idx) in phase" :key="idx">
-        <div class="tableCard" v-for="(card, x) in phaseSet.size" :key="x" />
+      <div class="cardSet" v-for="(phaseItem, idx) in phase" :key="idx">
+        <p>{{ setLabel(phaseItem) }}</p>
+        <div class="cards">
+          <div class="tableCard" v-for="(card, x) in phaseItem.size" :key="x" />
+        </div>
       </div>
     </div>
   </div>
@@ -26,6 +29,14 @@ export default Vue.component("table-set", {
         : this.player.gamename;
     },
   },
+  methods: {
+    setLabel(phaseItem) {
+      if (phaseItem.pattern === "color") {
+        return `${phaseItem.size} cards of one color`;
+      }
+      return `${phaseItem.pattern} of ${phaseItem.size}`;
+    },
+  },
 });
 </script>
 
@@ -35,26 +46,45 @@ export default Vue.component("table-set", {
   margin: 40px;
 
   h2 {
-    margin: 0px 0px 0px 20px;
+    margin: 0px 0px 10px 20px;
     padding: 0px;
   }
 }
 .cardArea {
   display: flex;
-  background-color: #ededed;
-  border-radius: 6px;
-}
-.cardSet {
-  display: flex;
-  margin: 20px;
-}
+  border-radius: 10px;
+  overflow: hidden;
 
-.tableCard {
-  height: 75px;
-  width: 53px;
-  background-color: white;
-  border-radius: 3px;
-  margin: 5px;
-  border: 1px solid #d1d1d1;
+  .cardSet {
+    padding: 15px;
+    background-color: #ededed;
+    transition: 200ms;
+
+    &:hover {
+      background-color: #d3f18b;
+      transition: 300ms;
+    }
+
+    p {
+      padding: 0px;
+      margin: 0px 10px;
+      color: #8f8f8f;
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 10pt;
+    }
+    .cards {
+      display: flex;
+    }
+
+    .tableCard {
+      height: 75px;
+      width: 53px;
+      background-color: white;
+      border-radius: 5px;
+      margin: 5px 4px;
+      border: 1px solid #d1d1d1;
+    }
+  }
 }
 </style>
