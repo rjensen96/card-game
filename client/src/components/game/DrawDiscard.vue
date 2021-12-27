@@ -2,20 +2,12 @@
   <div class="drawDiscard">
     <p>Draw</p>
     <div @click="hitDraw()">
-      <phase-card
-        :selectable="false"
-        :text="drawCard.text || null"
-        :color="drawCard.color || null"
-      />
+      <phase-card :selectable="false" :cardData="drawCard" />
     </div>
 
     <p>Discard</p>
     <div @click="hitDiscard()">
-      <phase-card
-        :selectable="false"
-        :text="discardCard.text || null"
-        :color="discardCard.color || null"
-      />
+      <phase-card :selectable="false" :cardData="discardCard" />
     </div>
   </div>
 </template>

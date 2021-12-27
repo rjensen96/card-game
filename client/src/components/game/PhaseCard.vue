@@ -1,23 +1,24 @@
 <template>
-  <div class="card" :class="selectedClass" @click="selectCard">
-    <p :class="colorClass">{{ this.text }}</p>
+  <div
+    class="gameCard"
+    :id="this.cardData.key"
+    :class="selectedClass"
+    @click="selectCard"
+  >
+    <p :class="colorClass">{{ this.cardData.text }}</p>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
+import { Card } from "../../types/card";
 export default Vue.component("phase-card", {
   name: "PhaseCard",
-  data() {
-    return {
-      isSelected: false,
-    };
-  },
   //todo: prop should actually just be "cardData" and have that be of type Card
-  props: ["text", "color", "value", "cardKey", "selectable"],
+  props: ["text", "color", "value", "cardKey", "cardData", "selectable"],
   computed: {
     colorClass(): string {
-      switch (this.color) {
+      switch (this.cardData.color) {
         case 1:
           return "red";
         case 2:
@@ -31,14 +32,17 @@ export default Vue.component("phase-card", {
       }
     },
     selectedClass(): string {
-      return this.isSelected ? "selected" : "";
+      const selectedKeys = this.$store.state.selectedCards.map(
+        (card: Card) => card.key
+      );
+
+      return selectedKeys.includes(this.cardData.key) ? "selected" : "";
     },
   },
   methods: {
     selectCard(): void {
       if (this.selectable) {
-        this.isSelected = !this.isSelected;
-        this.$store.commit("selectCard", this.cardKey);
+        this.$store.commit("selectCard", this.cardData.key);
       }
     },
   },
@@ -48,7 +52,7 @@ export default Vue.component("phase-card", {
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap");
 
 .red {
-  color: rgb(179, 1, 1);
+  color: rgb(255, 36, 36);
 }
 
 .blue {
@@ -56,14 +60,14 @@ export default Vue.component("phase-card", {
 }
 
 .yellow {
-  color: rgb(238, 241, 37);
+  color: rgb(224, 248, 8);
 }
 
 .green {
-  color: rgb(11, 136, 11);
+  color: rgb(97, 241, 97);
 }
 
-.card {
+.gameCard {
   height: 100px;
   min-width: 70px;
   margin: 0px 5px;
@@ -72,7 +76,6 @@ export default Vue.component("phase-card", {
   box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.15);
   border: 1px solid #dbdbdb;
   user-select: none;
-  cursor: pointer;
 
   p {
     margin: auto;
