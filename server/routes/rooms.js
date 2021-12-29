@@ -18,6 +18,8 @@ router.get("/", function (req, res, next) {
 });
 
 // TODO: catch more errors in here? there are potentially unhandled exceptions.
+// TODO: ensure players in room is <= 6
+// TODO: add "locked" field to room class, don't join if locked
 /**
  * POST to join a room.
  */
@@ -58,7 +60,12 @@ router.post("/:roomId/join", async (req, res, next) => {
     console.error(error);
   }
 
-  res.json({ roomId: targetRoomId, roomPlayerData });
+  const playerId = req.body.socketId;
+  res.json({
+    roomId: targetRoomId,
+    roomPlayerData,
+    playerId,
+  });
 });
 
 /**

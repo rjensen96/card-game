@@ -7,7 +7,7 @@ const {
   sendDrawDiscard,
   sendGameState,
 } = require("./pushResponses");
-const { rotatePlayerUp, drawCard, discard } = require("../gameflow");
+const { rotatePlayerUp, drawCard, discard, playCards } = require("../gameflow");
 
 // todo: should probably convert this entire file to typescript so that I can use types.
 // or, I guess I could just make factories like I was planning.
@@ -47,6 +47,7 @@ function initializeIO(io) {
     handleSetGamename(socket); // to be implemented... but should probably just use a route.
     handleStartGame(socket);
     handleTakeCard(socket);
+    handlePlayCards(socket);
   });
 }
 
@@ -111,6 +112,10 @@ const getRandomRoomCode = () => {
 
 function handleCreateRoom(socket) {
   socket.on("createRoom", async (data) => {
+    // TEMPORARY: reset db when creating a new room just to keep things clean.
+    await db.setDB({ rooms: {}, users: {} });
+    // TODO: MUST REMOVE LINE ABOVE FOR PRODUCTION.
+
     const dbRooms = await db.getProperty("rooms");
     const roomsList = dbRooms ? Object.keys(dbRooms) : [];
 
@@ -119,6 +124,9 @@ function handleCreateRoom(socket) {
     do {
       newRoomCode = getRandomRoomCode();
     } while (roomsList.includes(newRoomCode));
+
+    // TEMP: HARDCODING FOR TESTING PURPOSES
+    newRoomCode = "AAAA";
 
     // create the room in db
     const room = new GameRoom(newRoomCode);
@@ -137,25 +145,26 @@ function handleCreateRoom(socket) {
     const roomPlayerData = await db.getPublicDataInRoom(newRoomCode);
 
     // todo: emit a create confirmation then handle that in client
-    io_
-      .to(socket.id)
-      .emit("createConfirmation", { roomCode: newRoomCode, roomPlayerData });
+    io_.to(socket.id).emit("createConfirmation", {
+      roomCode: newRoomCode,
+      roomPlayerData,
+      playerId: player.socketId,
+    });
   });
 }
 
 function handleDisconnect(socket) {
   socket.on("disconnect", async (reason) => {
     console.log("client disconnected", socket.id);
-    db.deleteUserBySocketId(socket.id);
+    // db.deleteUserBySocketId(socket.id);
     // notify room that user left?
   });
 }
 
 function handleSetGamename(socket) {
   socket.on("setGamename", async (data) => {
-    console.log("setting gamename for socket: ", socket.id);
-    await db.setProperty(`users.${socket.id}.gamename`, data.gamename);
-    const roomId = await db.getProperty(`users.${socket.id}.room`);
+    await db.setProperty(`users.${data.playerId}.gamename`, data.gamename);
+    const roomId = await db.getProperty(`users.${data.playerId}.room`);
     const roomPlayerData = await db.getPublicDataInRoom(roomId);
     io_.to(roomId).emit("roomPlayerData", roomPlayerData);
   });
@@ -164,7 +173,7 @@ function handleSetGamename(socket) {
 // todo: check if room is already started to prevent people from doing stupid crap
 function handleStartGame(socket) {
   socket.on("startGame", async (data) => {
-    const ownPlayerData = await db.getProperty(`users.${socket.id}`);
+    const ownPlayerData = await db.getProperty(`users.${data.playerId}`);
     const { room } = ownPlayerData;
 
     // get things rolling
@@ -187,15 +196,21 @@ function handleStartGame(socket) {
   });
 }
 
+function handlePlayCards(socket) {
+  socket.on("playCards", (data) => {
+    playCards(io_, socket.id, data);
+  });
+}
+
 function handleTakeCard(socket) {
-  socket.on("takeCard", async (data) => {
+  socket.on("takeCard", (data) => {
     drawCard(io_, socket.id, data.pileName);
   });
 }
 
 function handleDiscard(socket) {
-  socket.on("discard", async (data) => {
-    discard(io_, socket.id, data);
+  socket.on("discard", (data) => {
+    discard(io_, socket.id, data.card);
   });
 }
 
