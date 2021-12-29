@@ -1,0 +1,19 @@
+draggables: https://www.npmjs.com/package/vuedraggable
+buttons on hand: sort by number or by color.
+
+bugs:
+weird error typescript array any phases[phase] in TableSet.vue (solved: punted and used javascript)
+
+idea:
+improve accessibility of game by having "suits" on cards, just some symbol for each color.
+
+issue:
+I've been including "playerId" on websocket requests, started implementing that...
+but the problem is subscribing and responding to stuff.
+If the websocket id changes and playerId stays the same, messages won't get back to the client unless the new socket id joins.
+So i guess I could join it to the room every time.
+
+I should probably also really think about authentication at this point.
+
+The problem I'm running into is that development is super slow when I have to recreate the whole gamestate in the client every time I make any change to server-side code. That's a huge pain.
+Makes it impossible to debug the server in any kind of efficient manner.
