@@ -1,3 +1,4 @@
+const { getPublicDataInRoom } = require("../database");
 const db = require("../database");
 
 async function sendPlayersOwnData(roomId, io) {
@@ -40,4 +41,14 @@ async function sendGameState(roomId, io) {
   io.to(roomId).emit("gameState", gameState);
 }
 
-module.exports = { sendPlayersOwnData, sendDrawDiscard, sendGameState };
+async function sendPublicPlayerData(roomId, io) {
+  const roomPlayerData = await getPublicDataInRoom(roomId);
+  io.to(roomId).emit("roomPlayerData", roomPlayerData);
+}
+
+module.exports = {
+  sendPlayersOwnData,
+  sendDrawDiscard,
+  sendGameState,
+  sendPublicPlayerData,
+};

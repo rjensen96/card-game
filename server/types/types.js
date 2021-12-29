@@ -1,3 +1,5 @@
+const { phases } = require("./phases");
+
 class Player {
   // I should probably make a generic 'game' prop, and then attach some game instance to that.
   //   game: CardGame;
@@ -13,7 +15,8 @@ class Player {
     this.room = roomName;
     this.hand = [];
     this.points = 0;
-    this.phase = 1;
+    this.phaseNumber = 2;
+    this.phase = phases[this.phaseNumber];
   }
 }
 
@@ -34,15 +37,17 @@ class GameRoom {
   }
 
   generateDeck() {
-    for (let color = 1; color < 5; color++) {
-      for (let value = 1; value < 13; value++) {
-        const card = {
-          value,
-          text: value.toFixed(0),
-          color,
-          key: "" + color + value,
-        };
-        this.drawPile.push(card);
+    for (let round = 0; round < 2; round++) {
+      for (let color = 1; color < 5; color++) {
+        for (let value = 1; value < 12; value++) {
+          const card = {
+            value,
+            text: value.toFixed(0),
+            color,
+            key: color + "-" + value + "-" + round,
+          };
+          this.drawPile.push(card);
+        }
       }
     }
   }

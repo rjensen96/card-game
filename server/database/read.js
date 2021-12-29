@@ -41,7 +41,6 @@ async function getGamenamesInRoom(roomId) {
     }
 
     const socketIds = _.get(db, `rooms.${roomId}.users`);
-    console.log("socketids...", socketIds);
     const gamenames = socketIds.map((socketId) => {
       return db.users[socketId].gamename;
     });
@@ -68,6 +67,7 @@ async function getPublicDataInRoom(roomId) {
     const obj = {};
     obj.gamename = db.users[socketId].gamename;
     obj.points = db.users[socketId].points;
+    obj.phaseNumber = db.users[socketId].phaseNumber;
     obj.phase = db.users[socketId].phase;
     return obj;
   });
