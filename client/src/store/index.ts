@@ -11,6 +11,7 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
   const playerArray: Player[] = data.map((player: any) => {
     const playerData: Player = {
       gamename: player.gamename,
+      phaseNumber: player.phaseNumber,
       phase: player.phase,
       points: player.points,
       key: Math.random(),
@@ -24,6 +25,11 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
 // todo: ownPlayerData should be its own object.
 // have hand, phase, points nested under that.
 // todo: selectCard has business logic; that should probably move back to the calling component.
+
+// todo: playerId should be the socket id in use when a player joins a room.
+// the server should send that id back as "playerId"
+// that way when the server restarts, it doesn't frig everything up and crash.
+// need to send this playerId with every WS request to the server.
 export default new Vuex.Store({
   state: {
     chats: getEmptyChatMessageArray(),
@@ -31,8 +37,10 @@ export default new Vuex.Store({
     drawCard: null,
     gamename: "",
     hand: getEmptyCardArray(),
-    phase: 0,
+    phase: {},
+    phaseNumber: 0,
     playersInRoom: getEmptyPlayerArray(),
+    playerId: "",
     points: 0,
     proctorMessage: "",
     roomCode: "",
@@ -91,6 +99,12 @@ export default new Vuex.Store({
     setPhase(state, phase) {
       state.phase = phase;
     },
+    setPhaseNumber(state, phaseNumber) {
+      state.phaseNumber = phaseNumber;
+    },
+    setPlayerId(state, playerId) {
+      state.playerId = playerId;
+    },
     setProctorMessage(state, proctorMessage) {
       state.proctorMessage = proctorMessage;
     },
@@ -108,6 +122,7 @@ export default new Vuex.Store({
     SOCKET_joinConfirmation({ commit }, data) {
       commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
       commit("setRoomCode", data.roomCode);
+      commit("setPlayerId", data.playerId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
     },
@@ -118,14 +133,29 @@ export default new Vuex.Store({
       commit("setRoomCode", data.roomCode);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
+      commit("setPlayerId", data.playerId);
     },
     SOCKET_ownPlayerData({ commit }, data) {
       commit("setHand", data.hand);
       commit("setPoints", data.points);
       commit("setPhase", data.phase);
+      commit("setPhaseNumber", data.phaseNumber);
     },
     SOCKET_roomPlayerData({ commit }, data) {
+      // due to some funky issue, Vue parses data into observer instead of data.
+      // the workaround is to serialize it again and parse it again.
+      // https://stackoverflow.com/questions/52873516/vue-js-returns-ob-observer-data-instead-of-my-array-of-objects
+      data = JSON.parse(JSON.stringify(data));
+
+      // // fix every key in data.
+      // Object.keys(data).forEach((key) => {
+      //   data[key] = JSON.parse(JSON.stringify(data[key]));
+      // });
+
+      // // const cleanData = JSON.parse(JSON.stringify(data));
+      // console.log("got new player data:", data);
       const newPlayersData = getPlayerArrayFromData(data);
+      console.log("setting players data", newPlayersData);
       commit("setPlayersInRoom", newPlayersData);
     },
     SOCKET_drawDiscard({ commit }, data) {

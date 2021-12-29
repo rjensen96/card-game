@@ -2,7 +2,8 @@
 export interface Player {
   gamename: string;
   points: number;
-  phase: number;
+  phaseNumber: number;
+  phase: any;
   key: number;
 }
 
