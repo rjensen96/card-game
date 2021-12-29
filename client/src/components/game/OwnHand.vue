@@ -19,10 +19,7 @@
       v-for="card in hand"
       :key="card.key"
       :cardData="card"
-      :cardKey="card.key"
-      :text="card.text"
-      :value="card.value"
-      :color="card.color"
+      :baseClass="'gameCard'"
       :selectable="true"
     />
   </div>
@@ -57,6 +54,7 @@ export default Vue.component("own-hand", {
       boxY: 0,
       marquee: null,
       selectedKeys: {},
+      cardSortMethod: "",
     };
   },
   components: { PhaseCard, NumericIcon, PaletteIcon },
@@ -65,7 +63,13 @@ export default Vue.component("own-hand", {
   },
   computed: {
     hand() {
-      return this.$store.state.hand;
+      const hand = this.$store.state.hand;
+      if (this.cardSortMethod === "") {
+        return hand;
+      }
+      return hand.sort(
+        (a, b) => a[this.cardSortMethod] - b[this.cardSortMethod]
+      );
     },
     handEls() {
       return document.getElementsByClassName("gameCard");
@@ -73,18 +77,10 @@ export default Vue.component("own-hand", {
   },
   methods: {
     sortByValue() {
-      const hand = this.$store.state.hand;
-      hand.sort((a, b) => a.value - b.value);
-      this.$store.commit("setHand", hand);
-      this.marquee.style.width = "100px";
-      this.marquee.style.height = "100px";
+      this.cardSortMethod = "value";
     },
     sortByColor() {
-      const hand = this.$store.state.hand;
-      hand.sort((a, b) => a.color - b.color);
-      this.$store.commit("setHand", hand);
-      this.marquee.style.width = "10px";
-      this.marquee.style.height = "10px";
+      this.cardSortMethod = "color";
     },
     handleMouseDown(event) {
       this.marquee.style.display = "block";

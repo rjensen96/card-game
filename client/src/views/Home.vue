@@ -26,13 +26,6 @@ export default Vue.extend({
       return this.$store.state.roomCode === "";
     },
   },
-  methods: {
-    createRoom(): void {
-      // TODO: on this click, we could take user to a form to do custom room settings.
-      // Makes more sense to configure the settings before actually creating it.
-      this.$socket.emit("createRoom");
-    },
-  },
 });
 </script>
 

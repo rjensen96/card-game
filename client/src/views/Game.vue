@@ -6,7 +6,7 @@
       <div id="table-sets">
         <table-set
           v-for="player in players"
-          :key="player.name"
+          :key="player.key"
           :player="player"
         />
       </div>
@@ -28,7 +28,16 @@ export default Vue.extend({
   components: { OwnHand, TableSet, DrawDiscard, ProctorBoard },
   computed: {
     players(): Player[] {
-      return this.$store.state.playersInRoom;
+      const players = this.$store.state.playersInRoom;
+      // typescript sort of objects requires some verbosity.
+      return players.sort((a: Player, b: Player) => {
+        if (a.gamename < b.gamename) {
+          return 1;
+        } else if (a.gamename > b.gamename) {
+          return -1;
+        }
+        return 0;
+      });
     },
   },
 });

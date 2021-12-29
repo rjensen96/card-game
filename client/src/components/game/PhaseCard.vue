@@ -1,10 +1,5 @@
 <template>
-  <div
-    class="gameCard"
-    :id="this.cardData.key"
-    :class="selectedClass"
-    @click="selectCard"
-  >
+  <div :class="cardClass" :id="this.cardData.key" @click="selectCard">
     <p :class="colorClass">{{ this.cardData.text }}</p>
   </div>
 </template>
@@ -14,8 +9,7 @@ import Vue from "vue";
 import { Card } from "../../types/card";
 export default Vue.component("phase-card", {
   name: "PhaseCard",
-  //todo: prop should actually just be "cardData" and have that be of type Card
-  props: ["text", "color", "value", "cardKey", "cardData", "selectable"],
+  props: ["cardData", "baseClass", "selectable"],
   computed: {
     colorClass(): string {
       switch (this.cardData.color) {
@@ -30,6 +24,9 @@ export default Vue.component("phase-card", {
         default:
           return "black";
       }
+    },
+    cardClass(): string {
+      return this.baseClass + " " + this.selectedClass;
     },
     selectedClass(): string {
       const selectedKeys = this.$store.state.selectedCards.map(
@@ -56,15 +53,15 @@ export default Vue.component("phase-card", {
 }
 
 .blue {
-  color: rgb(54, 16, 190);
+  color: rgb(22, 33, 136);
 }
 
 .yellow {
-  color: rgb(224, 248, 8);
+  color: rgb(237, 43, 255);
 }
 
 .green {
-  color: rgb(97, 241, 97);
+  color: rgb(70, 243, 70);
 }
 
 .gameCard {
@@ -80,6 +77,21 @@ export default Vue.component("phase-card", {
   p {
     margin: auto;
     font-size: 40px;
+    font-family: "Roboto", Arial, sans-serif;
+  }
+}
+
+.tableCard {
+  height: 75px;
+  width: 53px;
+  background-color: white;
+  border-radius: 5px;
+  margin: 5px 4px;
+  border: 1px solid #d1d1d1;
+  display: flex;
+  p {
+    margin: auto;
+    font-size: 30px;
     font-family: "Roboto", Arial, sans-serif;
   }
 }

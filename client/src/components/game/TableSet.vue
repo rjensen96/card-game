@@ -2,10 +2,27 @@
   <div class="container">
     <h2>{{ displayName }}</h2>
     <div class="cardArea">
-      <div class="cardSet" v-for="(phaseItem, idx) in phase" :key="idx">
+      <div
+        class="cardSet"
+        v-for="(phaseItem, phaseIndex) in this.player.phase"
+        :key="phaseIndex"
+        @click="playSelectedCards(phaseIndex)"
+      >
         <p>{{ setLabel(phaseItem) }}</p>
-        <div class="cards">
+
+        <!-- Render blank cards if phase doesn't have cards played -->
+        <div v-if="!phaseItem.cards.length" class="cards">
           <div class="tableCard" v-for="(card, x) in phaseItem.size" :key="x" />
+        </div>
+
+        <!-- Render cards played on phase if they exist -->
+        <div v-else class="cards">
+          <phase-card
+            v-for="card in phaseItem.cards"
+            :cardData="card"
+            :key="card.key"
+            :baseClass="'tableCard'"
+          />
         </div>
       </div>
     </div>
@@ -15,13 +32,19 @@
 <script>
 import Vue from "vue";
 import { phases } from "../../types/phases";
+
+// todo: add some feature banning the playage on other peoples sets if current player hasn't completed their phase
+// (still need to validate that on server side, but helps gameplay ease)
+
+// TODO: the bug here is that the computed phase() prop is no good
+// need to use the phase object attached to the player prop.
+
 export default Vue.component("table-set", {
   name: "TableSet",
   props: ["player"],
   computed: {
     phase() {
-      const phase = this.player.phase;
-      return phases[phase];
+      return phases[this.player.phaseNumber];
     },
     displayName() {
       return this.player.gamename === this.$store.state.gamename
@@ -35,6 +58,19 @@ export default Vue.component("table-set", {
         return `${phaseItem.size} cards of one color`;
       }
       return `${phaseItem.pattern} of ${phaseItem.size}`;
+    },
+    playSelectedCards(phaseIndex) {
+      console.log("play cards:", phaseIndex);
+      const payload = {
+        gamename: this.player.gamename,
+        phaseIndex,
+        cards: this.$store.state.selectedCards,
+      };
+      this.$socket.emit("playCards", payload);
+      this.$store.commit("unSelectAllCards");
+    },
+    removePlayedCards(phaseItem) {
+      console.log("hit remove");
     },
   },
 });
