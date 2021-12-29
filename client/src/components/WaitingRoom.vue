@@ -46,6 +46,13 @@ export default Vue.component("waiting-room", {
   components: {
     WaitingPersona,
   },
+  mounted() {
+    // temp thing to allow automation of creating a room.
+    this.confirmName();
+    if (!this.startIsDisabled) {
+      this.startGame();
+    }
+  },
   computed: {
     getRoomCode(): string {
       return this.$store.state.roomCode;
@@ -62,6 +69,9 @@ export default Vue.component("waiting-room", {
 
       return rv;
     },
+    tempGameName(): string {
+      return this.$store.state.gamename;
+    },
   },
   methods: {
     confirmName(): void {
@@ -70,14 +80,21 @@ export default Vue.component("waiting-room", {
         return [...str.toUpperCase()].every((chr) => chr >= "A" && chr <= "Z");
       };
 
-      if (isLetters(this.nameInput)) {
-        this.$socket.emit("setGamename", { gamename: this.nameInput });
+      this.nameInput = this.tempGameName; // TEMP!
+      // if (isLetters(this.nameInput)) {// TEMP!
+      if (isLetters("a")) {
+        const playerId = this.$store.state.playerId;
+        this.$socket.emit("setGamename", {
+          gamename: this.nameInput,
+          playerId,
+        });
         this.$store.commit("setGamename", this.nameInput);
         this.confirmedName = true;
       }
     },
     startGame(): void {
-      this.$socket.emit("startGame", true);
+      const playerId = this.$store.state.playerId;
+      this.$socket.emit("startGame", { playerId });
     },
   },
 });

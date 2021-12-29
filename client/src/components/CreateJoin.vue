@@ -47,8 +47,10 @@ export default Vue.component("create-join", {
     joinRoom(): void {
       // bail if values not supplied.
       // todo: refactor this and make a requests folder on client side.
-      const url = `http://localhost:8080/rooms/${this.roomCode}/join`;
+      // const url = `http://localhost:8080/rooms/${this.roomCode}/join`;
+      const url = `http://localhost:8080/rooms/AAAA/join`;
       const store = this.$store;
+      store.commit("setGamename", "Sydney"); // TEMP!
 
       async function requestJoin(socketId: string) {
         try {
@@ -57,6 +59,7 @@ export default Vue.component("create-join", {
             console.log("ok", resp.data);
             store.commit("setPlayersInRoom", resp.data.roomPlayerData);
             store.commit("setRoomCode", resp.data.roomId);
+            store.commit("setPlayerId", resp.data.playerId);
           } else {
             console.log(resp.status, resp.statusText);
           }
@@ -73,6 +76,7 @@ export default Vue.component("create-join", {
     },
     createRoom(): void {
       this.$socket.emit("createRoom");
+      this.$store.commit("setGamename", "Ryan"); // TEMP!
     },
   },
 });
