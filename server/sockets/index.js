@@ -7,7 +7,13 @@ const {
   sendDrawDiscard,
   sendGameState,
 } = require("./pushResponses");
-const { rotatePlayerUp, drawCard, discard, playCards } = require("../gameflow");
+const {
+  rotatePlayerUp,
+  drawCard,
+  discard,
+  playCards,
+  advanceRound,
+} = require("../gameflow");
 
 // todo: should probably convert this entire file to typescript so that I can use types.
 // or, I guess I could just make factories like I was planning.
@@ -40,6 +46,7 @@ function initializeIO(io) {
     // handleJoin(socket);
     // todo: make these lines look more like:
     // socket.on("eventName", functionName);
+    handleAdvanceRound(socket);
     handleCreateRoom(socket);
     handleChat(socket);
     handleDisconnect(socket);
@@ -211,6 +218,13 @@ function handleTakeCard(socket) {
 function handleDiscard(socket) {
   socket.on("discard", (data) => {
     discard(io_, socket.id, data.card);
+  });
+}
+
+function handleAdvanceRound(socket) {
+  socket.on("advanceRound", async (data) => {
+    const roomId = await db.getProperty(`users.${socket.id}.room`);
+    advanceRound(roomId, io_);
   });
 }
 

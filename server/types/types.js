@@ -15,7 +15,7 @@ class Player {
     this.room = roomName;
     this.hand = [];
     this.points = 0;
-    this.phaseNumber = 2;
+    this.phaseNumber = 1;
     this.phase = phases[this.phaseNumber];
   }
 }
@@ -29,6 +29,7 @@ class GameRoom {
   drew = false;
   played = false;
   discarded = false;
+  roundIsOver = false;
 
   constructor(roomName) {
     this.roomName = roomName;

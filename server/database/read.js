@@ -1,5 +1,5 @@
 const _ = require("lodash");
-const fs = require("fs").promises;
+const fs = require("fs");
 const path = require("path");
 
 /**
@@ -9,7 +9,9 @@ const path = require("path");
 async function getDB() {
   try {
     const filepath = path.join(__dirname, "db.json");
-    return JSON.parse(await fs.readFile(filepath));
+    const db = JSON.parse(fs.readFileSync(filepath));
+    // return JSON.parse(await fs.readFile(filepath));
+    return db;
   } catch (err) {
     console.error(err);
   }

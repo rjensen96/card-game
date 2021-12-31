@@ -8,6 +8,7 @@ const {
   sendDrawDiscard,
   sendPublicPlayerData,
 } = require("../sockets/pushResponses");
+const { phases } = require("../types/phases");
 const {
   playerHasAllCards,
   playerCompletedPhase,
@@ -38,22 +39,80 @@ async function rotatePlayerUp(roomId) {
   await db.setDB(fullDB);
 }
 
-async function endCurrentPhase() {
-  // // collect everyone's cards, calculate points, shuffle the deck.
-  // roomData.users.forEach((socketId) => {
-  //   // get their hand
-  //   const userHand = fullDB.users[socketId].hand;
-  //   // score their hand
-  //   fullDB.users[socketId].points += scoreHand(userHand);
-  //   // collect their hand
-  //   roomData.drawPile.push(...userHand);
-  //   fullDB.users[socketId].hand = [];
-  // });
-  // // collect the discard pile
-  // roomData.drawPile.push(...roomData.discardPile);
-  // roomData.discardPile = [];
-  // // shuffle the draw pile
-  // shuffle(roomData.drawPile);
+async function advanceRound(roomId, io) {
+  const fullDB = await db.getDB();
+  const roomData = fullDB.rooms[roomId];
+
+  if (!roomData.roundIsOver) {
+    return;
+  }
+
+  // endCurrentRound already took care of shuffling, collecting cards, etc.
+  // need to deal new cards though.
+
+  roomData.roundIsOver = false;
+  const drawPile = fullDB.rooms[roomId].drawPile;
+
+  // deal cards (this should probably be its own function)
+  for (let i = 0; i < 10; i++) {
+    roomData.users.forEach((socketId) => {
+      const user = fullDB.users[socketId];
+      user.hand.push(drawPile.pop());
+    });
+  }
+
+  await db.setDB(fullDB);
+
+  await sendPublicPlayerData(roomId, io);
+  await sendDrawDiscard(roomId, io);
+  await sendPlayersOwnData(roomId, io);
+  await sendGameState(roomId, io);
+}
+
+async function endCurrentRound(roomId, io) {
+  const fullDB = await db.getDB();
+  const roomData = fullDB.rooms[roomId];
+  roomData.roundIsOver = true;
+
+  // collect everyone's cards, calculate points, shuffle the deck.
+  roomData.users.forEach(async (socketId) => {
+    // get their hand
+    const userHand = fullDB.users[socketId].hand;
+    // score their hand
+    fullDB.users[socketId].points += scoreHand(userHand);
+    // collect their hand
+    roomData.drawPile.push(...userHand);
+    fullDB.users[socketId].hand = [];
+
+    // collect all cards from their phases
+    const phase = fullDB.users[socketId].phase;
+    phase.forEach((phaseItem) => {
+      roomData.drawPile.push(...phaseItem.cards);
+      phaseItem.cards = [];
+    });
+
+    // advance their phase if completed
+    if (fullDB.users[socketId].completedPhase) {
+      advancePlayerPhase(socketId);
+    }
+
+    // const completedPhase = await playerCompletedPhase(socketId);
+    // if (completedPhase) {
+    //   const newPhaseNumber = fullDB.users[socketId].phaseNumber + 1;
+    //   fullDB.users[socketId].phaseNumber = newPhaseNumber;
+    //   fullDB.users[socketId].phase = phases[newPhaseNumber];
+    // }
+  });
+  // collect the discard pile
+  roomData.drawPile.push(...roomData.discardPile);
+  roomData.discardPile = [];
+
+  // shuffle the draw pile
+  shuffle(roomData.drawPile);
+
+  // re-write db and tell everyone that the round ended.
+  await db.setDB(fullDB);
+  await sendGameState(roomId, io);
 }
 
 async function drawCard(io, socketId, pileName) {
@@ -158,9 +217,9 @@ async function discard(io, socketId, card) {
   // if player did not complete their phase, take the cards in their phase and put those back in their hand.
   // then tell them why.
   const completedPhase = await playerCompletedPhase(socketId);
+  const phase = fullDB.users[socketId].phase;
 
   if (!completedPhase) {
-    const phase = fullDB.users[socketId].phase;
     phase.forEach((phaseItem) => {
       hand.push(...phaseItem.cards);
       phaseItem.cards = [];
@@ -181,6 +240,19 @@ async function discard(io, socketId, card) {
   await sendGameState(roomId, io);
   await sendPlayersOwnData(roomId, io);
   await sendDrawDiscard(roomId, io);
+
+  // Did the player Go Out (no more cards) ? If so, end the current round.
+  if (hand.length === 0) {
+    // console.log("ending round"); // this works
+    endCurrentRound(roomId, io);
+  }
+}
+
+async function advancePlayerPhase(socketId) {
+  const fullDB = await db.getDB();
+  const newPhaseNumber = fullDB.users[socketId].phaseNumber++;
+  fullDB.users[socketId].phase = phases[newPhaseNumber];
+  await db.setDB(fullDB);
 }
 
 function scoreHand(hand) {
@@ -323,6 +395,11 @@ async function playCards(io, playerSocketId, data) {
   // 1. set the phase item at phase index to the current version of phaseItem
   const newPhaseData = fullDB.users[targetSocketId].phase;
 
+  // if newPhaseData is a completed phase, set the flag on user object
+  if (newPhaseData.every((itm) => itm.cards.length >= itm.size)) {
+    await db.setProperty(`users.${targetSocketId}.completedPhase`, true);
+  }
+
   await db.setProperty(`users.${targetSocketId}.phase`, newPhaseData);
 
   // 2. Remove the cards from player's hand
@@ -340,6 +417,11 @@ async function playCards(io, playerSocketId, data) {
   await sendGameState(roomId, io);
   await sendPlayersOwnData(roomId, io);
   await sendPublicPlayerData(roomId, io);
+
+  // Did the player Go Out (no more cards) ? If so, end the current round.
+  if (playerHand.length === 0) {
+    endCurrentRound(roomId, io);
+  }
 }
 
-module.exports = { rotatePlayerUp, drawCard, discard, playCards };
+module.exports = { rotatePlayerUp, drawCard, discard, playCards, advanceRound };

@@ -36,6 +36,7 @@ async function sendGameState(roomId, io) {
     drew: roomData.drew,
     played: roomData.played,
     discarded: roomData.discarded,
+    roundIsOver: roomData.roundIsOver,
   };
 
   io.to(roomId).emit("gameState", gameState);
