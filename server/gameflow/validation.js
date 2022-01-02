@@ -31,7 +31,7 @@ function isCardRun(cards) {
   cards.sort((a, b) => a.value - b.value);
 
   for (let i = 0; i < cards.length - 1; i++) {
-    if (cards[i + 1].value > cards[i].value + 1) {
+    if (cards[i + 1].value !== cards[i].value + 1) {
       return false;
     }
   }
@@ -50,9 +50,7 @@ function allSameColor(cards) {
   return cards.every((card) => card.color === cards[0].color);
 }
 
-async function playerHasAllCards(socketId, cards) {
-  const hand = await db.getProperty(`users.${socketId}.hand`);
-
+async function handHasAllCards(hand, cards) {
   function getHandIndex(key) {
     for (let i = 0; i < hand.length; i++) {
       if (hand[i].key === key) {
@@ -81,6 +79,23 @@ async function playerHasAllCards(socketId, cards) {
 async function playerCompletedPhase(socketId) {
   const playerPhaseData = await db.getProperty(`users.${socketId}.phase`);
 
+  if (!playerPhaseData) {
+    console.log("socketid:", socketId);
+    throw new Error("player phase data is not defined, somehow.");
+    return false;
+  }
+
+  return playerPhaseData.every(
+    (phaseItem) => phaseItem.cards.length >= phaseItem.size
+  );
+}
+
+/**
+ *
+ * @param {Array} phase - phase data of a Player
+ * @returns true if each item in phase has cards matching or greater than its required size
+ */
+function phaseIsComplete(phase) {
   return playerPhaseData.every(
     (phaseItem) => phaseItem.cards.length >= phaseItem.size
   );
@@ -91,5 +106,6 @@ module.exports = {
   isCardSet,
   allSameColor,
   playerCompletedPhase,
-  playerHasAllCards,
+  phaseIsComplete,
+  handHasAllCards,
 };

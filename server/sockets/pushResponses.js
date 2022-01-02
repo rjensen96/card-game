@@ -1,5 +1,6 @@
 const { getPublicDataInRoom } = require("../database");
 const db = require("../database");
+const { getPublicRoomData } = require("../mongo/requests/read");
 
 async function sendPlayersOwnData(roomId, io) {
   const fullDB = await db.getDB();
@@ -42,9 +43,9 @@ async function sendGameState(roomId, io) {
   io.to(roomId).emit("gameState", gameState);
 }
 
-async function sendPublicPlayerData(roomId, io) {
-  const roomPlayerData = await getPublicDataInRoom(roomId);
-  io.to(roomId).emit("roomPlayerData", roomPlayerData);
+async function sendPublicPlayerData(room, io) {
+  const roomPlayerData = await getPublicRoomData(room._id);
+  io.to(room.roomId).emit("roomPlayerData", roomPlayerData);
 }
 
 module.exports = {

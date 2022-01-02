@@ -1,27 +1,32 @@
-const { Server } = require("socket.io");
+const { Server, Socket } = require("socket.io");
 const db = require("../database");
 const _ = require("lodash");
 const { GameRoom, Player } = require("../types/types");
+// const {
+//   sendPlayersOwnData,
+//   sendDrawDiscard,
+//   sendGameState,
+// } = require("./pushResponses");
+const { drawCard, discard, playCards, advanceRound } = require("../gameflow");
+
+const { createRoom, createPlayer } = require("../mongo/requests/create");
+
 const {
-  sendPlayersOwnData,
+  getPublicRoomData,
+  getPlayerByPlayerId,
+  getRoomOfPlayerId,
+  getRoomByRoomId,
+} = require("../mongo/requests/read");
+const {
+  setPlayerGamename,
+  rotatePlayerUp,
+  dealCards,
+} = require("../mongo/requests/update");
+const {
   sendDrawDiscard,
   sendGameState,
-} = require("./pushResponses");
-const {
-  rotatePlayerUp,
-  drawCard,
-  discard,
-  playCards,
-  advanceRound,
-} = require("../gameflow");
-
-// todo: should probably convert this entire file to typescript so that I can use types.
-// or, I guess I could just make factories like I was planning.
-
-// next steps on client:
-// improve the game UI
-// make a waiting room that people sit in after they join where their names bubble up.
-// make a start button that people can click
+  sendPlayersOwnData,
+} = require("./push-responses");
 
 // OK NEW NOTES ON CLIENT:
 /*
@@ -42,16 +47,13 @@ function initializeIO(io) {
   io_ = io;
   io.on("connection", (socket) => {
     console.log("client connected", socket.id);
-    // ALSO TODO: make factories for room, user... functions for dealCards, makeDeck, etc.
-    // handleJoin(socket);
-    // todo: make these lines look more like:
-    // socket.on("eventName", functionName);
     handleAdvanceRound(socket);
     handleCreateRoom(socket);
     handleChat(socket);
     handleDisconnect(socket);
     handleDiscard(socket);
-    handleSetGamename(socket); // to be implemented... but should probably just use a route.
+    handleJoin(socket);
+    handleSetGamename(socket);
     handleStartGame(socket);
     handleTakeCard(socket);
     handlePlayCards(socket);
@@ -60,103 +62,64 @@ function initializeIO(io) {
 
 // update: below should not be used because this is an http route now.
 // also todo: freaking standardize if you're saying 'user' or 'player', it's too confusing
-//
-// function handleJoin(socket) {
-//   // CONNECTING TO ROOMS:
-//   // https://stackoverflow.com/questions/19150220/creating-rooms-in-socket-io
-//   socket.on("joinRoom", async (data) => {
-//     const targetRoom = data.roomCode.toUpperCase();
-//     const roomExists = await db.getProperty(`rooms.${targetRoom}`);
 
-//     if (!roomExists) {
-//       console.log("JOIN REJECTED:", targetRoom);
-//       data.reason = "Room does not exist.";
-//       io_.to(socket.id).emit("joinRejection", data);
-//       return;
-//     }
+// todo: consider combining create and join functions (or combining the common pieces)
+// it's not DRY
 
-//     // join the roomCode
-//     socket.join(targetRoom);
-
-//     // add user to the room
-//     const player = new Player(socket.id, targetRoom);
-
-//     // middleware for sockets?
-//     // https://socket.io/docs/v4/middlewares/
-
-//     const socketsInRoom = await db.getProperty(`rooms.${targetRoom}.users`);
-
-//     if (!socketsInRoom.includes(player.socketId)) {
-//       socketsInRoom.push(player.socketId);
-//       await db.setProperty(`rooms.${targetRoom}.users`, socketsInRoom);
-//     }
-
-//     // tell the socket that it joined successfully
-//     io_.to(socket.id).emit("joinConfirmation", {
-//       roomCode: targetRoom,
-//       playersInRoom: socketsInRoom,
-//     });
-
-//     // add player to 'users' object in db
-//     await db.setProperty(`users.${player.socketId}`, player);
-
-//     // tell the room somebody joined (but we don't yet know whomst)
-//     io_.to(targetRoom).emit("playerJoined", { gamename: "notyetprovided" });
-//   });
-// }
-
-const getRandomRoomCode = () => {
-  const minChar = "A".charCodeAt(0);
-  const maxChar = "Z".charCodeAt(0);
-  const charCodes = [];
-  for (let i = 0; i < 4; i++) {
-    charCodes.push(
-      Math.floor(Math.random() * (maxChar - minChar + 1)) + minChar
-    );
-  }
-  return String.fromCharCode(...charCodes);
-};
-
+/**
+ * REFACTORED TO MONGO
+ * @param {Socket} socket
+ */
 function handleCreateRoom(socket) {
   socket.on("createRoom", async (data) => {
-    // TEMPORARY: reset db when creating a new room just to keep things clean.
-    await db.setDB({ rooms: {}, users: {} });
-    // TODO: MUST REMOVE LINE ABOVE FOR PRODUCTION.
+    try {
+      const room = await createRoom();
+      const player = await createPlayer(socket.id, room._id);
 
-    const dbRooms = await db.getProperty("rooms");
-    const roomsList = dbRooms ? Object.keys(dbRooms) : [];
+      socket.join(room.roomId);
+      const roomPlayerData = await getPublicRoomData(room._id);
 
-    // get new UNIQUE room key.
-    let newRoomCode = "";
-    do {
-      newRoomCode = getRandomRoomCode();
-    } while (roomsList.includes(newRoomCode));
+      const payload = {
+        roomId: room.roomId,
+        roomPlayerData,
+        playerId: player.playerId,
+      };
 
-    // TEMP: HARDCODING FOR TESTING PURPOSES
-    newRoomCode = "AAAA";
+      // emit join confirmation to be handled in client
+      io_.to(room.roomId).emit("joinConfirmation", payload);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+}
 
-    // create the room in db
-    const room = new GameRoom(newRoomCode);
-    await db.setProperty(`rooms.${newRoomCode}`, room);
+/**
+ * REFACTORED TO MONGO
+ * @param {Socket} socket
+ */
+function handleJoin(socket) {
+  socket.on("joinRoom", async (data) => {
+    const targetRoomId = data.roomId.toUpperCase();
+    const room = await getRoomByRoomId(targetRoomId);
 
-    // add player to the room
-    const player = new Player(socket.id, newRoomCode);
-    await db.setProperty(`rooms.${newRoomCode}.users`, [player.socketId]);
+    if (!room) {
+      // send error that room does not exist;
+      console.log("room does not exist");
+      return;
+    }
 
-    // add player to 'users' object in db
-    await db.setProperty(`users.${player.socketId}`, player);
+    const player = await createPlayer(socket.id, room._id);
+    socket.join(room.roomId);
 
-    // join the *socket* room
-    socket.join(newRoomCode);
+    const roomPlayerData = await getPublicRoomData(room._id);
 
-    const roomPlayerData = await db.getPublicDataInRoom(newRoomCode);
-
-    // todo: emit a create confirmation then handle that in client
-    io_.to(socket.id).emit("createConfirmation", {
-      roomCode: newRoomCode,
+    const payload = {
+      roomId: targetRoomId,
       roomPlayerData,
-      playerId: player.socketId,
-    });
+      playerId: player.playerId,
+    };
+
+    io_.to(room.roomId).emit("joinConfirmation", payload);
   });
 }
 
@@ -168,38 +131,40 @@ function handleDisconnect(socket) {
   });
 }
 
+/**
+ * REFACTORED TO MONGO
+ * @param {Socket} socket
+ */
 function handleSetGamename(socket) {
   socket.on("setGamename", async (data) => {
-    await db.setProperty(`users.${data.playerId}.gamename`, data.gamename);
-    const roomId = await db.getProperty(`users.${data.playerId}.room`);
-    const roomPlayerData = await db.getPublicDataInRoom(roomId);
-    io_.to(roomId).emit("roomPlayerData", roomPlayerData);
+    await setPlayerGamename(data.playerId, data.gamename);
+    const player = await getPlayerByPlayerId(data.playerId);
+    const roomPlayerData = await getPublicRoomData(player.room._id);
+    io_.to(player.room.roomId).emit("roomPlayerData", roomPlayerData);
   });
 }
 
 // todo: check if room is already started to prevent people from doing stupid crap
 function handleStartGame(socket) {
   socket.on("startGame", async (data) => {
-    const ownPlayerData = await db.getProperty(`users.${data.playerId}`);
-    const { room } = ownPlayerData;
+    const { roomId, gameStarted } = await getRoomOfPlayerId(data.playerId);
 
-    // get things rolling
-    await rotatePlayerUp(room);
+    if (gameStarted) {
+      return; // prevent people from doing dumb stuff like restarting the game randomly.
+    }
 
-    // todo: deal 10 cards to everybody in room.
-    await db.dealCardsInRoom(room);
+    // a better and faster way to do these updates would be to pass the room document around
+    // then I could do all the modifications on the document, then save it once.
+    // that would significantly reduce the number of read/write requests that go all the way to OREGON.
 
-    // todo: setup a way for a PROCTOR to notify everybody that 10 cards were dealt.
-    // get each socket, and to each socket send that
-    await sendPlayersOwnData(room, io_);
-    await sendDrawDiscard(room, io_);
+    await rotatePlayerUp(roomId);
+    await dealCards(roomId);
 
-    // set the playerUp and drew, played, discarded to false
-    await sendGameState(room, io_);
+    const room = await getRoomByRoomId(roomId); // updated with the dealt cards.
 
-    // todo: send the phases object to the clients.
-
-    io_.to(room).emit("gameStarted");
+    sendDrawDiscard(room, io_);
+    sendGameState(room, io_);
+    sendPlayersOwnData(room, io_);
   });
 }
 
