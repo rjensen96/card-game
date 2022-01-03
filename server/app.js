@@ -77,3 +77,16 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
+
+/**************** MONGOOSE CONFIG *******************/
+const mongoose = require("mongoose");
+const { createRoom } = require("./mongo/requests/create");
+
+const mongoDB =
+  "mongodb+srv://cluelessmorgan:TKVLBV7PTWXh395@card-game.vgvfs.mongodb.net/games?retryWrites=true&w=majority";
+
+mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
+const mdb = mongoose.connection;
+mdb.on("error", console.error.bind(console, "MongoDB connection error:"));
+
+module.exports = { mdb };
