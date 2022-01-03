@@ -51,44 +51,37 @@ function allSameColor(cards) {
 }
 
 async function handHasAllCards(hand, cards) {
-  function getHandIndex(key) {
-    for (let i = 0; i < hand.length; i++) {
-      if (hand[i].key === key) {
-        return i;
-      }
-    }
-    return -1;
-  }
+  // collect keys of all cards in hand
+  const handKeys = {};
+  hand.forEach((card) => (handKeys[card.key] = "unused"));
 
-  // when each card is found in the hand, remove it and check for the next one.
-  // we need to remove the card because a client could fudge it and send a bunch of identical indices.
-  // COUNTERFEITS.
-  cards.forEach((card) => {
-    const handIdx = getHandIndex(card.key);
-    if (handIdx === -1) {
-      return false;
+  // check each potential card against the hand keys
+  // returns false if any card is used twice or a key is used that isn't in hand
+  for (let i = 0; i < cards.length; i++) {
+    if (handKeys[cards[i].key] === "unused") {
+      handKeys[cards[i].key] = "used";
     } else {
-      hand.splice(handIdx, 1); // remove the found card.
+      return false;
     }
-  });
+  }
 
   return true;
 }
 
 // (simple but need this to be very modular)
-async function playerCompletedPhase(socketId) {
-  const playerPhaseData = await db.getProperty(`users.${socketId}.phase`);
+// async function playerCompletedPhase(socketId) {
+//   const playerPhaseData = await db.getProperty(`users.${socketId}.phase`);
 
-  if (!playerPhaseData) {
-    console.log("socketid:", socketId);
-    throw new Error("player phase data is not defined, somehow.");
-    return false;
-  }
+//   if (!playerPhaseData) {
+//     console.log("socketid:", socketId);
+//     throw new Error("player phase data is not defined, somehow.");
+//     return false;
+//   }
 
-  return playerPhaseData.every(
-    (phaseItem) => phaseItem.cards.length >= phaseItem.size
-  );
-}
+//   return playerPhaseData.every(
+//     (phaseItem) => phaseItem.cards.length >= phaseItem.size
+//   );
+// }
 
 /**
  *
@@ -96,16 +89,14 @@ async function playerCompletedPhase(socketId) {
  * @returns true if each item in phase has cards matching or greater than its required size
  */
 function phaseIsComplete(phase) {
-  return playerPhaseData.every(
-    (phaseItem) => phaseItem.cards.length >= phaseItem.size
-  );
+  return phase.every((phaseItem) => phaseItem.cards.length >= phaseItem.size);
 }
 
 module.exports = {
   isCardRun,
   isCardSet,
   allSameColor,
-  playerCompletedPhase,
+  // playerCompletedPhase,
   phaseIsComplete,
   handHasAllCards,
 };
