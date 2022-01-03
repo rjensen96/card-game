@@ -2,6 +2,7 @@ const RoomModel = require("../models/room");
 const PlayerModel = require("../models/player");
 const { newPhases } = require("../../types/phases");
 const { addPlayerToRoom } = require("./update");
+const { shuffle } = require("../../gameflow/utils");
 
 /**
  * Creates a new room in the database with a randomly generated 4-letter ID.
@@ -34,7 +35,7 @@ async function createRoom() {
   const newRoom = await RoomModel.create({
     roomId: newRoomId,
     players: [],
-    drawPile: generateDeck(),
+    drawPile: generateDeck(false),
     discardPile: [],
     drew: false,
     played: false,
@@ -87,7 +88,7 @@ function handleError(err) {
   }
 }
 
-function generateDeck() {
+function generateDeck(doShuffle) {
   const deck = [];
   for (let round = 0; round < 2; round++) {
     for (let color = 1; color < 5; color++) {
@@ -101,6 +102,10 @@ function generateDeck() {
         deck.push(card);
       }
     }
+  }
+
+  if (doShuffle) {
+    shuffle(deck);
   }
   return deck;
 }
