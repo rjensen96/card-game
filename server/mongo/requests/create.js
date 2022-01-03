@@ -1,6 +1,6 @@
 const RoomModel = require("../models/room");
 const PlayerModel = require("../models/player");
-const { newPhases } = require("../../types/phases");
+const { phases } = require("../../types/phases");
 const { addPlayerToRoom } = require("./update");
 const { shuffle } = require("../../gameflow/utils");
 
@@ -21,7 +21,7 @@ async function createRoom() {
     return String.fromCharCode(...charCodes);
   };
 
-  // TEMPORARY: delete all the existing rooms and players to clean up the db.
+  // TEMPORARY: delete all the existing rooms and players to clean up the db
   RoomModel.deleteMany({}, handleError);
   PlayerModel.deleteMany({}, handleError);
 
@@ -68,7 +68,7 @@ async function createPlayer(playerId, roomDocId) {
       completedPhase: false,
       hand: [],
       points: 0,
-      phases: [...newPhases],
+      phases: [...phases],
     });
 
     await addPlayerToRoom(newPlayer._id, roomDocId);

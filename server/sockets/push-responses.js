@@ -1,7 +1,3 @@
-// THIS IS THE MONGO-IZED VERSION OF THE pushResponses.js file!
-// that file will be deleted when this is fully implemented!
-const { getPublicRoomData } = require("../mongo/requests/read");
-
 function sendDrawDiscard(room, io) {
   try {
     const draw = room.drawPile.pop() || null;

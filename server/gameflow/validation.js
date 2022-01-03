@@ -1,7 +1,3 @@
-// play cards validations:
-
-const db = require("../database");
-
 /**
  *
  * @param {Array} cards
@@ -68,21 +64,6 @@ async function handHasAllCards(hand, cards) {
   return true;
 }
 
-// (simple but need this to be very modular)
-// async function playerCompletedPhase(socketId) {
-//   const playerPhaseData = await db.getProperty(`users.${socketId}.phase`);
-
-//   if (!playerPhaseData) {
-//     console.log("socketid:", socketId);
-//     throw new Error("player phase data is not defined, somehow.");
-//     return false;
-//   }
-
-//   return playerPhaseData.every(
-//     (phaseItem) => phaseItem.cards.length >= phaseItem.size
-//   );
-// }
-
 /**
  *
  * @param {Array} phase - phase data of a Player
@@ -96,7 +77,6 @@ module.exports = {
   isCardRun,
   isCardSet,
   allSameColor,
-  // playerCompletedPhase,
   phaseIsComplete,
   handHasAllCards,
 };

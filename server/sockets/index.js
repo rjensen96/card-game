@@ -1,6 +1,4 @@
 const { Server, Socket } = require("socket.io");
-const db = require("../database");
-const _ = require("lodash");
 
 const { drawCard, discard, playCards, advanceRound } = require("../gameflow");
 
@@ -121,7 +119,6 @@ function handleJoin(socket) {
 function handleDisconnect(socket) {
   socket.on("disconnect", async (reason) => {
     console.log("client disconnected", socket.id);
-    // db.deleteUserBySocketId(socket.id);
     // notify room that user left?
   });
 }

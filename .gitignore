@@ -72,6 +72,9 @@ typings/
 .env
 .env.test
 
+# config files with assumed secrets
+config.js
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 
