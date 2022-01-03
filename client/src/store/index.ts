@@ -43,13 +43,8 @@ export default new Vuex.Store({
     playerId: "",
     points: 0,
     proctorMessage: "",
-    roomCode: "",
-    gameState: {
-      playerUp: "",
-      drew: false,
-      played: false,
-      discarded: false,
-    },
+    roomId: "",
+    gameState: null,
     selectedCards: getEmptyCardArray(),
   },
   mutations: {
@@ -83,8 +78,8 @@ export default new Vuex.Store({
     setPlayersInRoom(state, playersInRoom) {
       state.playersInRoom = playersInRoom;
     },
-    setRoomCode(state, roomCode) {
-      state.roomCode = roomCode;
+    setRoomId(state, roomId) {
+      state.roomId = roomId;
     },
     setDrawDiscard(state, drawDiscard) {
       state.drawCard = drawDiscard.draw;
@@ -120,17 +115,18 @@ export default new Vuex.Store({
   },
   actions: {
     SOCKET_joinConfirmation({ commit }, data) {
-      commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
-      commit("setRoomCode", data.roomCode);
-      commit("setPlayerId", data.playerId);
+      // commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
+      console.log("joinconfirmation:", data);
+      commit("setRoomId", data.roomId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
+      commit("setPlayerId", data.playerId);
     },
     SOCKET_chatMessage({ commit }, data) {
       commit("addChatMessage", data);
     },
     SOCKET_createConfirmation({ commit }, data) {
-      commit("setRoomCode", data.roomCode);
+      commit("setRoomId", data.roomId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
       commit("setPlayerId", data.playerId);
@@ -145,17 +141,11 @@ export default new Vuex.Store({
       // due to some funky issue, Vue parses data into observer instead of data.
       // the workaround is to serialize it again and parse it again.
       // https://stackoverflow.com/questions/52873516/vue-js-returns-ob-observer-data-instead-of-my-array-of-objects
+
+      // actually update: I think we don't need below line because it should be observable.
+      console.log("got new roomplayerdata");
       data = JSON.parse(JSON.stringify(data));
-
-      // // fix every key in data.
-      // Object.keys(data).forEach((key) => {
-      //   data[key] = JSON.parse(JSON.stringify(data[key]));
-      // });
-
-      // // const cleanData = JSON.parse(JSON.stringify(data));
-      // console.log("got new player data:", data);
       const newPlayersData = getPlayerArrayFromData(data);
-      console.log("setting players data", newPlayersData);
       commit("setPlayersInRoom", newPlayersData);
     },
     SOCKET_drawDiscard({ commit }, data) {
@@ -182,7 +172,9 @@ export default new Vuex.Store({
  */
 function getProctorMessage(gameState: any, gamename: string) {
   let msg = "";
-  if (gameState.playerUp === gamename) {
+  if (gameState.roundIsOver) {
+    msg += `Round complete!`;
+  } else if (gameState.playerUp === gamename) {
     msg += "You're up! ";
 
     if (!gameState.drew) {

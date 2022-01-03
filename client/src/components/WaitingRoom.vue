@@ -1,7 +1,7 @@
 <template>
   <div>
-    <p id="roomCodeLabel">Room code</p>
-    <h1 id="roomCode">{{ getRoomCode }}</h1>
+    <p id="roomIdLabel">Room code</p>
+    <h1 id="roomId">{{ getRoomId }}</h1>
     <div id="nameForm" v-if="!confirmedName">
       <input
         type="text"
@@ -47,15 +47,11 @@ export default Vue.component("waiting-room", {
     WaitingPersona,
   },
   mounted() {
-    // temp thing to allow automation of creating a room.
-    this.confirmName();
-    if (!this.startIsDisabled) {
-      this.startGame();
-    }
+    console.log("waiting room mounted");
   },
   computed: {
-    getRoomCode(): string {
-      return this.$store.state.roomCode;
+    getRoomId(): string {
+      return this.$store.state.roomId;
     },
     playersInRoom(): Player[] {
       return this.$store.state.playersInRoom;
@@ -69,9 +65,6 @@ export default Vue.component("waiting-room", {
 
       return rv;
     },
-    tempGameName(): string {
-      return this.$store.state.gamename;
-    },
   },
   methods: {
     confirmName(): void {
@@ -80,9 +73,7 @@ export default Vue.component("waiting-room", {
         return [...str.toUpperCase()].every((chr) => chr >= "A" && chr <= "Z");
       };
 
-      this.nameInput = this.tempGameName; // TEMP!
-      // if (isLetters(this.nameInput)) {// TEMP!
-      if (isLetters("a")) {
+      if (isLetters(this.nameInput)) {
         const playerId = this.$store.state.playerId;
         this.$socket.emit("setGamename", {
           gamename: this.nameInput,
@@ -102,12 +93,12 @@ export default Vue.component("waiting-room", {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-#roomCodeLabel {
+#roomIdLabel {
   font-size: 30px;
   margin: 60px 0px 0px 0px;
 }
 
-#roomCode {
+#roomId {
   font-size: 80px;
   margin: 10px 0px 50px 0px;
 }

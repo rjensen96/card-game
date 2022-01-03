@@ -12,7 +12,7 @@
           <input
             type="text"
             placeholder="Code"
-            v-model="roomCode"
+            v-model="roomId"
             :maxlength="4"
           />
           <button v-on:click="joinRoom()">Join</button>
@@ -33,7 +33,7 @@ export default Vue.component("create-join", {
   data() {
     return {
       socket: io(),
-      roomCode: "",
+      roomId: "",
       joinDisabled: true,
       codeIsInvalid: false,
     };
@@ -45,38 +45,11 @@ export default Vue.component("create-join", {
   },
   methods: {
     joinRoom(): void {
-      // bail if values not supplied.
-      // todo: refactor this and make a requests folder on client side.
-      // const url = `http://localhost:8080/rooms/${this.roomCode}/join`;
-      const url = `http://localhost:8080/rooms/AAAA/join`;
-      const store = this.$store;
-      store.commit("setGamename", "Sydney"); // TEMP!
-
-      async function requestJoin(socketId: string) {
-        try {
-          const resp = await axios.post(url, { socketId });
-          if (resp.status === 200) {
-            console.log("ok", resp.data);
-            store.commit("setPlayersInRoom", resp.data.roomPlayerData);
-            store.commit("setRoomCode", resp.data.roomId);
-            store.commit("setPlayerId", resp.data.playerId);
-          } else {
-            console.log(resp.status, resp.statusText);
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      requestJoin(this.$socket.id);
-      console.log("joining: ", this.$socket.id);
-
-      // this.$socket.emit("joinRoom", payload);
-      // this.$router.push("Game");
+      console.log("joining room: ", this.roomId);
+      this.$socket.emit("joinRoom", { roomId: this.roomId });
     },
     createRoom(): void {
       this.$socket.emit("createRoom");
-      this.$store.commit("setGamename", "Ryan"); // TEMP!
     },
   },
 });

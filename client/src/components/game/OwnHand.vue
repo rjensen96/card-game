@@ -22,6 +22,7 @@
       :baseClass="'gameCard'"
       :selectable="true"
     />
+    <button v-if="roundIsOver" @click="advanceRound">Next round</button>
   </div>
 </template>
 
@@ -74,6 +75,9 @@ export default Vue.component("own-hand", {
     handEls() {
       return document.getElementsByClassName("gameCard");
     },
+    roundIsOver() {
+      return this.$store.state.gameState.roundIsOver;
+    },
   },
   methods: {
     sortByValue() {
@@ -81,6 +85,11 @@ export default Vue.component("own-hand", {
     },
     sortByColor() {
       this.cardSortMethod = "color";
+    },
+    advanceRound() {
+      this.$socket.emit("advanceRound", {
+        playerId: this.$store.state.playerId,
+      });
     },
     handleMouseDown(event) {
       this.marquee.style.display = "block";

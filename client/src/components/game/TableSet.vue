@@ -1,6 +1,9 @@
 <template>
   <div class="container">
-    <h2>{{ displayName }}</h2>
+    <div class="headerData">
+      <h2>{{ displayName }}</h2>
+      <h2 class="score">Score: {{ this.player.points }}</h2>
+    </div>
     <div class="cardArea">
       <div
         class="cardSet"
@@ -44,7 +47,7 @@ export default Vue.component("table-set", {
   props: ["player"],
   computed: {
     phase() {
-      return phases[this.player.phaseNumber];
+      return this.player.phase;
     },
     displayName() {
       return this.player.gamename === this.$store.state.gamename
@@ -79,11 +82,20 @@ export default Vue.component("table-set", {
 <style lang="scss" scoped>
 .container {
   text-align: left;
-  margin: 40px;
+  margin: 20px 50px;
 
   h2 {
-    margin: 0px 0px 10px 20px;
+    margin: 0px 20px 10px 20px;
     padding: 0px;
+
+    &.score {
+      color: rgb(151, 151, 151);
+    }
+  }
+
+  .headerData {
+    display: flex;
+    justify-content: space-between;
   }
 }
 .cardArea {

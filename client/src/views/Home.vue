@@ -1,7 +1,8 @@
 <template>
   <div>
     <create-join v-if="notInRoom" />
-    <waiting-room v-else />
+    <waiting-room v-else-if="inRoom" />
+    <game v-else-if="gameStarted" />
   </div>
 </template>
 
@@ -10,9 +11,10 @@ import { Vue } from "vue-property-decorator";
 import io from "socket.io-client";
 import CreateJoin from "../components/CreateJoin.vue";
 import WaitingRoom from "../components/WaitingRoom.vue";
+import Game from "./Game.vue";
 
 export default Vue.extend({
-  components: { CreateJoin, WaitingRoom },
+  components: { CreateJoin, WaitingRoom, Game },
   // idea: have an "observer" mode where people can join and just watch?
 
   name: "Home",
@@ -23,7 +25,13 @@ export default Vue.extend({
   },
   computed: {
     notInRoom(): boolean {
-      return this.$store.state.roomCode === "";
+      return this.$store.state.roomId === "";
+    },
+    inRoom(): boolean {
+      return this.$store.state.roomId !== "" && !this.$store.state.gameState;
+    },
+    gameStarted(): boolean {
+      return this.$store.state.gameState !== null;
     },
   },
 });

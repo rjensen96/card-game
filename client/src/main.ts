@@ -40,7 +40,7 @@ new Vue({
       console.log("JOIN REJECTED:", data.reason);
     },
     gameStarted: function (data) {
-      router.push("Game");
+      console.log("gamestarted");
     },
   },
   render: (h) => h(App),
