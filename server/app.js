@@ -11,7 +11,6 @@ const logger = require("morgan");
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const cardsRouter = require("./routes/cards");
-const roomsRouter = require("./routes/rooms");
 
 const initializeIO = require("./sockets");
 const app = express();
@@ -60,7 +59,6 @@ app.use((req, res, next) => {
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/cards", cardsRouter);
-app.use("/rooms", roomsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -81,9 +79,12 @@ app.use(function (err, req, res, next) {
 /**************** MONGOOSE CONFIG *******************/
 const mongoose = require("mongoose");
 const { createRoom } = require("./mongo/requests/create");
+const { mongo_pass, mongo_user } = require("./config");
+// see config.js.example.
+// to add your credentials, create config.js at the top-level of the server folder and copy/paste config.js.example
+// then fill in your own credentials.
 
-const mongoDB =
-  "mongodb+srv://cluelessmorgan:TKVLBV7PTWXh395@card-game.vgvfs.mongodb.net/games?retryWrites=true&w=majority";
+const mongoDB = `mongodb+srv://${mongo_user}:${mongo_pass}@card-game.vgvfs.mongodb.net/games?retryWrites=true&w=majority`;
 
 mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
 const mdb = mongoose.connection;

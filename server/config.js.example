@@ -1,0 +1,4 @@
+const mongo_user = "username";
+const mongo_pass = "password";
+
+module.exports = {mongo_user, mongo_pass};
