@@ -1,5 +1,6 @@
 // THIS IS THE MONGO-IZED VERSION OF THE pushResponses.js file!
 // that file will be deleted when this is fully implemented!
+const { getPublicRoomData } = require("../mongo/requests/read");
 
 function sendDrawDiscard(room, io) {
   try {
@@ -36,4 +37,21 @@ function sendPlayersOwnData(room, io) {
   });
 }
 
-module.exports = { sendDrawDiscard, sendGameState, sendPlayersOwnData };
+function sendPublicPlayerData(room, io) {
+  const roomPlayerData = room.players.map((player) => {
+    return {
+      gamename: player.gamename,
+      points: player.points,
+      phase: player.phases[0],
+      phaseNumber: 11 - player.phases.length,
+    };
+  });
+  io.to(room.roomId).emit("roomPlayerData", roomPlayerData);
+}
+
+module.exports = {
+  sendDrawDiscard,
+  sendGameState,
+  sendPlayersOwnData,
+  sendPublicPlayerData,
+};

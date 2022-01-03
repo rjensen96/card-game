@@ -1,12 +1,7 @@
 const { Server, Socket } = require("socket.io");
 const db = require("../database");
 const _ = require("lodash");
-const { GameRoom, Player } = require("../types/types");
-// const {
-//   sendPlayersOwnData,
-//   sendDrawDiscard,
-//   sendGameState,
-// } = require("./pushResponses");
+
 const { drawCard, discard, playCards, advanceRound } = require("../gameflow");
 
 const { createRoom, createPlayer } = require("../mongo/requests/create");
@@ -188,8 +183,8 @@ function handleDiscard(socket) {
 
 function handleAdvanceRound(socket) {
   socket.on("advanceRound", async (data) => {
-    const roomId = await db.getProperty(`users.${socket.id}.room`);
-    advanceRound(roomId, io_);
+    const room = await getRoomOfPlayerId(data.playerId);
+    advanceRound(room, io_);
   });
 }
 
