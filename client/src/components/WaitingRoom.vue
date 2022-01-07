@@ -2,6 +2,7 @@
   <div>
     <p id="roomIdLabel">Room code</p>
     <h1 id="roomId">{{ getRoomId }}</h1>
+    <proctor-board />
     <div id="nameForm" v-if="!confirmedName">
       <input
         type="text"
@@ -31,20 +32,22 @@ import { Vue } from "vue-property-decorator";
 import io from "socket.io-client";
 import { Player } from "../types/player";
 import WaitingPersona from "./WaitingPersona.vue";
+import ProctorBoard from "./game/ProctorBoard.vue";
 
 // todo: use vuetify https://vuetifyjs.com/en/components/icons/
 
 export default Vue.component("waiting-room", {
   name: "WaitingRoom",
+
   data() {
     return {
       socket: io(),
-      confirmedName: false,
       nameInput: "",
     };
   },
   components: {
     WaitingPersona,
+    ProctorBoard,
   },
   mounted() {
     console.log("waiting room mounted");
@@ -65,6 +68,9 @@ export default Vue.component("waiting-room", {
 
       return rv;
     },
+    confirmedName(): boolean {
+      return this.$store.state.gamename !== "";
+    },
   },
   methods: {
     confirmName(): void {
@@ -73,14 +79,16 @@ export default Vue.component("waiting-room", {
         return [...str.toUpperCase()].every((chr) => chr >= "A" && chr <= "Z");
       };
 
+      this.$store.commit("setProctorMessage", "");
+
       if (isLetters(this.nameInput)) {
         const playerId = this.$store.state.playerId;
         this.$socket.emit("setGamename", {
           gamename: this.nameInput,
           playerId,
         });
-        this.$store.commit("setGamename", this.nameInput);
-        this.confirmedName = true;
+        // this.$store.commit("setGamename", this.nameInput);
+        // this.confirmedName = true;
       }
     },
     startGame(): void {
@@ -126,7 +134,7 @@ export default Vue.component("waiting-room", {
 
 .personas {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
 }
 
 #start {

@@ -3,11 +3,11 @@
     <h1>Phase 10</h1>
     <div class="content">
       <div class="rightborder">
-        <h2>Create a room</h2>
+        <h2>Create room</h2>
         <button v-on:click="createRoom()">Create</button>
       </div>
       <div>
-        <h2>Join a room</h2>
+        <h2>Join room</h2>
         <div class="flex-center">
           <input
             type="text"
@@ -17,6 +17,7 @@
           />
           <button v-on:click="joinRoom()">Join</button>
         </div>
+        <proctor-board />
         <p v-if="this.codeIsInvalid" id="join-error">Invalid room code</p>
       </div>
     </div>
@@ -25,11 +26,12 @@
 
 <script lang="ts">
 import { Vue } from "vue-property-decorator";
+import ProctorBoard from "../components/game/ProctorBoard.vue";
 import io from "socket.io-client";
-import axios from "axios";
 
 export default Vue.component("create-join", {
   name: "CreateJoin",
+  components: { ProctorBoard },
   data() {
     return {
       socket: io(),
@@ -47,18 +49,24 @@ export default Vue.component("create-join", {
     joinRoom(): void {
       console.log("joining room: ", this.roomId);
       this.$socket.emit("joinRoom", { roomId: this.roomId });
+      this.$store.commit("setProctorMessage", "");
     },
     createRoom(): void {
+      this.$store.commit("setProctorMessage", "");
       this.$socket.emit("createRoom");
     },
   },
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+h1 {
+  font-weight: 400;
+}
+
 h2 {
   font-size: 50px;
+  font-weight: 500;
 }
 
 .content {

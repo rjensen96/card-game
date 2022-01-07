@@ -1,8 +1,11 @@
 <template>
-  <div class="waitingPersona">
-    <p>
-      {{ playerName }}
-    </p>
+  <div>
+    <div class="waitingPersona">
+      <span>
+        {{ playerInitial }}
+      </span>
+    </div>
+    <p>{{ playerName }}</p>
   </div>
 </template>
 
@@ -17,10 +20,13 @@ export default Vue.component("waiting-persona", {
     player: Player,
   },
   computed: {
-    playerName() {
+    playerInitial() {
       if (this.player.gamename === "") {
         return "?";
       }
+      return this.player.gamename[0];
+    },
+    playerName() {
       return this.player.gamename;
     },
   },
@@ -30,11 +36,25 @@ export default Vue.component("waiting-persona", {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .waitingPersona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100px;
   width: 100px;
   padding: 10px;
-  margin: 20px;
+  margin: 50px 40px 0px 40px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
+  border-radius: 50%;
+  background-color: #2c3e50;
+  color: white;
+
+  span {
+    font-size: 70px;
+    font-weight: bold;
+  }
+}
+
+p {
+  font-size: 20px;
 }
 </style>
