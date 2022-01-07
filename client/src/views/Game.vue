@@ -48,7 +48,7 @@ export default Vue.extend({
 //https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Introduction#grid_layout
 #game-container {
   display: flex;
-  margin: 20px 60px 150px 0px;
+  margin: 20px 60px 200px 0px;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
@@ -66,7 +66,7 @@ export default Vue.extend({
   display: flex;
   background-color: white;
   position: fixed;
-  height: 150px;
+  height: 200px;
   bottom: 0px;
   width: 100vw;
   z-index: 0;
