@@ -1,26 +1,27 @@
 <template>
   <div
     class="container"
+    :class="cursorClass"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
+    @drop="onDrop($event)"
+    @dragover.prevent
+    @dragenter.prevent
   >
     <div id="marquee" />
-    <div class="sortIcons">
-      <div class="iconButton">
-        <numeric-icon class="icon" @click="sortByValue" />
-      </div>
-
-      <div class="iconButton">
-        <palette-icon class="icon" @click="sortByColor" />
-      </div>
-    </div>
+    <tool-box
+      @sortUpdate="setSortType"
+      @selectUpdate="setSelectionType"
+      @sortHand="handleSortHand"
+    />
     <phase-card
       v-for="card in hand"
       :key="card.key"
       :cardData="card"
       :baseClass="'gameCard'"
-      :selectable="true"
+      :draggable="isDraggable"
+      @startDrag="handleStartDrag"
     />
     <button v-if="roundIsOver" @click="advanceRound">Next round</button>
   </div>
@@ -31,18 +32,16 @@
 // https://github.com/vuejs/docs/issues/927
 
 /*
-  Idea! Marquee is needed AND click_n_drag is needed, so...
-  Do like Photoshop. Make buttons (maybe by the color/number sorts) where user selects which cursort they want to use.
-  They can do the 4 arrows to drag things around, or the crosshairs to select.
-
-  Elsewhere (TableSet) have a hover div (little triangle speechbox thing) that says "play N cards" and shows little pictures of the selected cards
+  Idea! 
+  TableSet can have a hover div (little triangle speechbox thing) that says "play N cards" and shows little pictures of the selected cards
   That would also show a different message if they can't play there
 */
 
 import Vue from "vue";
 import PhaseCard from "./PhaseCard.vue";
-import NumericIcon from "vue-material-design-icons/Numeric.vue";
-import PaletteIcon from "vue-material-design-icons/Palette.vue";
+import { HandSort, HandSelect } from "../../types/toolbox";
+import ToolBox from "./toolbox/ToolBox.vue";
+import _ from "lodash";
 
 export default Vue.component("own-hand", {
   name: "OwnHand",
@@ -55,22 +54,18 @@ export default Vue.component("own-hand", {
       boxY: 0,
       marquee: null,
       selectedKeys: {},
-      cardSortMethod: "",
+      marqueeKeys: {},
+      cardSortMethod: HandSort.value,
+      cardSelectionMethod: HandSelect.marquee,
     };
   },
-  components: { PhaseCard, NumericIcon, PaletteIcon },
+  components: { PhaseCard, ToolBox },
   mounted() {
     this.marquee = document.getElementById("marquee");
   },
   computed: {
     hand() {
-      const hand = this.$store.state.hand;
-      if (this.cardSortMethod === "") {
-        return hand;
-      }
-      return hand.sort(
-        (a, b) => a[this.cardSortMethod] - b[this.cardSortMethod]
-      );
+      return this.$store.state.hand;
     },
     handEls() {
       return document.getElementsByClassName("gameCard");
@@ -78,20 +73,40 @@ export default Vue.component("own-hand", {
     roundIsOver() {
       return this.$store.state.gameState.roundIsOver;
     },
+    cursorClass() {
+      const className =
+        this.cardSelectionMethod === HandSelect.marquee
+          ? "cursorMarquee"
+          : "cursorDrag";
+
+      return className;
+    },
+    isDraggable() {
+      return this.cardSelectionMethod === HandSelect.drag;
+    },
   },
   methods: {
-    sortByValue() {
-      this.cardSortMethod = "value";
+    setSortType(sortType) {
+      this.cardSortMethod = sortType;
     },
-    sortByColor() {
-      this.cardSortMethod = "color";
+    setSelectionType(selectionType) {
+      this.cardSelectionMethod = selectionType;
     },
     advanceRound() {
       this.$socket.emit("advanceRound", {
         playerId: this.$store.state.playerId,
       });
     },
+    handleSortHand(sortType) {
+      const sortKey = sortType === HandSort.value ? "value" : "color";
+      const { hand } = this.$store.state;
+      hand.sort((a, b) => a[sortKey] - b[sortKey]);
+      this.$store.commit("setHand", hand);
+    },
     handleMouseDown(event) {
+      if (this.cardSelectionMethod !== HandSelect.marquee) {
+        return;
+      }
       this.marquee.style.display = "block";
 
       // get fixed coordinates
@@ -106,12 +121,28 @@ export default Vue.component("own-hand", {
       this.marquee.style.width = "0px";
       this.marquee.style.height = "0px";
 
+      this.marqueeKeys = getKeysInMarquee(
+        this.marquee.getBoundingClientRect(),
+        this.handEls
+      );
+
+      const currentKeys = getAllSelectedKeys(
+        this.selectedKeys,
+        this.marqueeKeys
+      );
+
+      this.$store.commit("setSelectedCardKeys", currentKeys);
+
       this.mouseIsDown = true;
     },
     handleMouseMove(event) {
       // get card coordinates: getBoundingClientRect()
       // https://stackoverflow.com/questions/288699/get-the-position-of-a-div-span-tag
       if (!this.mouseIsDown) {
+        return;
+      }
+
+      if (this.cardSelectionMethod !== HandSelect.marquee) {
         return;
       }
 
@@ -129,38 +160,76 @@ export default Vue.component("own-hand", {
       this.marquee.style.width = coords.w + "px";
 
       // SELECTION BY MARQUEE:
-      const marqueeKeys = getKeysInMarquee(
+      this.marqueeKeys = getKeysInMarquee(
         this.marquee.getBoundingClientRect(),
         this.handEls
       );
 
-      // select any card not in keysInMarquee
-      marqueeKeys.forEach((cardKey) => {
-        if (!this.selectedKeys[cardKey]) {
-          this.$store.commit("selectCard", cardKey);
-          this.selectedKeys[cardKey] = cardKey;
-        }
-      });
+      const currentKeys = getAllSelectedKeys(
+        this.selectedKeys,
+        this.marqueeKeys
+      );
 
-      // select again any card in selectedKeys that is no longer in marqueeKeys
-      // this has the effect of un-selecting cards when the marquee shrinks.
-      Object.keys(this.selectedKeys).forEach((key) => {
-        if (!marqueeKeys.includes(key)) {
-          this.$store.commit("selectCard", key); // commit the select again
-          delete this.selectedKeys[key]; // remove the key from this.selectedKeys object
-        }
-      });
+      this.$store.commit("setSelectedCardKeys", currentKeys);
     },
     handleMouseUp(event) {
+      if (this.cardSelectionMethod !== HandSelect.marquee) {
+        return;
+      }
+
       this.mouseIsDown = false;
       this.marquee.style.display = "none";
       this.marquee.style.height = "0px";
       this.marquee.style.width = "0px";
-      this.selectedKeys = {}; // reset this for next marquee.
+
+      // save the selected keys to the persisting prop.
+      this.selectedKeys = getAllSelectedKeys(
+        this.selectedKeys,
+        this.marqueeKeys
+      );
     },
-    // handleMouseOut(event) {
-    //   this.handleMouseUp(event); // bail out if goes out of range // bad because lots of things constitute "out"
-    // },
+    handleStartDrag(data) {
+      const { event, card } = data;
+      // this didn't initially work because I guess you can't do these events directly on a component.
+      // they have to be declared on a true DOM element... I guess.
+      // at any rate, this never fired here but does fire when declared one layer down on a div.
+
+      if (this.cardSelectionMethod !== HandSelect.drag) {
+        return;
+      }
+
+      event.dataTransfer.dropEffect = "move";
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("key", card.key);
+    },
+    onDrop(event) {
+      if (this.cardSelectionMethod !== HandSelect.drag) {
+        return;
+      }
+
+      const key = event.dataTransfer.getData("key");
+      const { target } = event;
+      const { hand } = this.$store.state;
+
+      // if draggedOver is <p>, then they hit the text of the card
+      // just means we have to use the parent of that node.
+      const draggedOver = target.nodeName === "P" ? target.parentNode : target;
+      const dropKey = draggedOver.id;
+
+      // get draggedOver's index in hand and the original index, splice out the card we drew and splice it into this index.
+      // that should reorder things!
+      const indexCut = _.findIndex(hand, (card) => card.key === key);
+      const indexPaste = _.findIndex(hand, (card) => card.key === dropKey);
+
+      // remove and get card that was dragged
+      const card = hand.splice(indexCut, 1)[0];
+
+      // insert that card at the drop index
+      hand.splice(indexPaste, 0, card);
+
+      // update state
+      this.$store.commit("setHand", hand);
+    },
   },
 });
 
@@ -175,8 +244,8 @@ function getKeysInMarquee(mqRect, handEls) {
   const marqueeCards = [...handEls].filter((cardEl) => {
     const cRect = cardEl.getBoundingClientRect();
     if (
-      isBetween(mqRect.top, mqRect.bottom, cRect.top) ||
-      isBetween(mqRect.top, mqRect.bottom, cRect.bottom)
+      isBetween(cRect.top, cRect.bottom, mqRect.top) ||
+      isBetween(cRect.top, cRect.bottom, mqRect.bottom)
     ) {
       // ensure right and left edges collide
       if (mqRect.left <= cRect.right && mqRect.right >= cRect.left) {
@@ -186,7 +255,9 @@ function getKeysInMarquee(mqRect, handEls) {
   });
 
   // return just the id of each card.
-  return marqueeCards.map((cardEl) => cardEl.id);
+  const keys = {};
+  marqueeCards.forEach((cardEl) => (keys[cardEl.id] = true));
+  return keys;
 }
 
 function getNormalizedCoordinates(originX, originY, newX, newY) {
@@ -209,6 +280,19 @@ function getNormalizedCoordinates(originX, originY, newX, newY) {
 
   return coords;
 }
+
+function getAllSelectedKeys(prevKeys, marqueeKeys) {
+  const keys = { ...prevKeys };
+  Object.keys(marqueeKeys).forEach((key) => {
+    if (keys[key] !== undefined) {
+      keys[key] = !keys[key];
+    } else {
+      keys[key] = true;
+    }
+  });
+
+  return keys;
+}
 </script>
 
 <style lang="scss" scoped>
@@ -221,28 +305,12 @@ function getNormalizedCoordinates(originX, originY, newX, newY) {
   cursor: crosshair;
 }
 
-.sortIcons {
-  display: flex;
-  flex-direction: column;
-  float: left;
-  margin: 0px 40px;
+.cursorMarquee {
+  cursor: crosshair;
 }
 
-.iconButton {
-  height: 25px;
-  width: 25px;
-  margin: 5px 0px;
-  border-radius: 5px;
-  padding: 4px;
-
-  &:hover {
-    background-color: #f1f1f1;
-    color: rgb(42, 106, 224);
-    cursor: pointer;
-  }
-  .icon {
-    margin: 5px 0px;
-  }
+.cursorDrag {
+  cursor: move;
 }
 
 #marquee {

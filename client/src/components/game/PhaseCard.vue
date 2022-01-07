@@ -1,15 +1,15 @@
 <template>
-  <div :class="cardClass" :id="this.cardData.key" @click="selectCard">
+  <div :class="cardClass" :id="this.cardData.key" @dragstart="startDrag">
     <p :class="colorClass">{{ this.cardData.text }}</p>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-import { Card } from "../../types/card";
 export default Vue.component("phase-card", {
   name: "PhaseCard",
-  props: ["cardData", "baseClass", "selectable"],
+  props: ["cardData", "baseClass"],
+
   computed: {
     colorClass(): string {
       switch (this.cardData.color) {
@@ -29,22 +29,22 @@ export default Vue.component("phase-card", {
       return this.baseClass + " " + this.selectedClass;
     },
     selectedClass(): string {
-      const selectedKeys = this.$store.state.selectedCards.map(
-        (card: Card) => card.key
-      );
-
-      return selectedKeys.includes(this.cardData.key) ? "selected" : "";
+      const { selectedCardKeys } = this.$store.state;
+      return selectedCardKeys[this.cardData.key] ? "selected" : "";
     },
   },
   methods: {
-    selectCard(): void {
-      if (this.selectable) {
-        this.$store.commit("selectCard", this.cardData.key);
-      }
+    startDrag(event: any) {
+      // todo: emit this key up to OwnHand so that we can splice it out and say it is dragging.
+      // this works!
+      this.$emit("startDrag", { event, card: this.cardData });
+      // console.log("dragging key ", this.cardData.key);
+      // console.log("drag started", event);
     },
   },
 });
 </script>
+
 <style lang="scss" scoped>
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap");
 
