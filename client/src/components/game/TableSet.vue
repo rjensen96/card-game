@@ -34,7 +34,6 @@
 
 <script>
 import Vue from "vue";
-import { phases } from "../../types/phases";
 
 // todo: add some feature banning the playage on other peoples sets if current player hasn't completed their phase
 // (still need to validate that on server side, but helps gameplay ease)
@@ -63,11 +62,12 @@ export default Vue.component("table-set", {
       return `${phaseItem.pattern} of ${phaseItem.size}`;
     },
     playSelectedCards(phaseIndex) {
-      console.log("play cards:", phaseIndex);
+      const { selectedCardKeys, hand } = this.$store.state;
+      const cards = hand.filter((card) => selectedCardKeys[card.key]);
       const payload = {
         gamename: this.player.gamename,
         phaseIndex,
-        cards: this.$store.state.selectedCards,
+        cards,
       };
       this.$socket.emit("playCards", payload);
       this.$store.commit("unSelectAllCards");
@@ -84,24 +84,26 @@ export default Vue.component("table-set", {
   text-align: left;
   margin: 20px 50px;
 
-  h2 {
-    margin: 0px 20px 10px 20px;
-    padding: 0px;
-
-    &.score {
-      color: rgb(151, 151, 151);
-    }
-  }
-
   .headerData {
     display: flex;
     justify-content: space-between;
+
+    h2 {
+      margin: 0px 20px 10px 20px;
+      padding: 0px;
+      font-weight: 500;
+      font-size: 22px;
+      &.score {
+        color: rgb(151, 151, 151);
+      }
+    }
   }
 }
 .cardArea {
   display: flex;
   border-radius: 10px;
   overflow: hidden;
+  cursor: pointer;
 
   .cardSet {
     padding: 15px;
@@ -118,7 +120,7 @@ export default Vue.component("table-set", {
       margin: 0px 10px;
       color: #8f8f8f;
       text-transform: uppercase;
-      font-weight: 600;
+      font-weight: 500;
       font-size: 10pt;
     }
     .cards {
