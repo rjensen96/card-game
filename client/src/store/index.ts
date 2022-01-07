@@ -22,6 +22,11 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
   return playerArray;
 }
 
+function getBinaryRecordset(): Record<string, boolean> {
+  const obj: Record<string, boolean> = {};
+  return obj;
+}
+
 // todo: ownPlayerData should be its own object.
 // have hand, phase, points nested under that.
 // todo: selectCard has business logic; that should probably move back to the calling component.
@@ -46,31 +51,17 @@ export default new Vuex.Store({
     roomId: "",
     gameState: null,
     selectedCards: getEmptyCardArray(),
+    selectedCardKeys: getBinaryRecordset(),
   },
   mutations: {
     addPlayer(state, gamename) {
       state.playersInRoom.push(gamename);
     },
-    selectCard(state, key) {
-      // check if selected cards already contains the key
-      if (state.selectedCards.some((card) => card.key === key)) {
-        // remove that card from selected.
-        state.selectedCards = state.selectedCards.filter(
-          (card) => card.key !== key
-        );
-      } else {
-        // find card in hand and add it to selected.
-        for (let i = 0; i < state.hand.length; i++) {
-          const currCard = state.hand[i];
-          if (currCard.key === key) {
-            state.selectedCards.push({ ...currCard });
-            break;
-          }
-        }
-      }
+    setSelectedCardKeys(state, keys) {
+      state.selectedCardKeys = keys;
     },
     unSelectAllCards(state) {
-      state.selectedCards = getEmptyCardArray();
+      state.selectedCardKeys = getBinaryRecordset();
     },
     setGamename(state, gamename) {
       state.gamename = gamename;
@@ -131,6 +122,9 @@ export default new Vuex.Store({
       commit("setPlayersInRoom", playersToAdd);
       commit("setPlayerId", data.playerId);
     },
+    SOCKET_gamenameConfirmation({ commit }, data) {
+      commit("setGamename", data.gamename);
+    },
     SOCKET_ownPlayerData({ commit }, data) {
       commit("setHand", data.hand);
       commit("setPoints", data.points);
@@ -143,8 +137,6 @@ export default new Vuex.Store({
       // https://stackoverflow.com/questions/52873516/vue-js-returns-ob-observer-data-instead-of-my-array-of-objects
 
       // actually update: I think we don't need below line because it should be observable.
-      console.log("got new roomplayerdata");
-      data = JSON.parse(JSON.stringify(data));
       const newPlayersData = getPlayerArrayFromData(data);
       commit("setPlayersInRoom", newPlayersData);
     },
@@ -172,6 +164,11 @@ export default new Vuex.Store({
  */
 function getProctorMessage(gameState: any, gamename: string) {
   let msg = "";
+
+  if (!gameState) {
+    return "";
+  }
+
   if (gameState.roundIsOver) {
     msg += `Round complete!`;
   } else if (gameState.playerUp === gamename) {
