@@ -1,11 +1,11 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link><br />
-      <router-link to="/chat">Chat</router-link><br />
-      <router-link to="/game">Game</router-link>
-      <!-- I'll leave these here for now, but I'd  like to redesign navigation for the app. -->
-    </div>
+    <!-- <div id="nav"> -->
+    <!-- <router-link to="/">Home</router-link><br /> -->
+    <!-- <router-link to="/chat">Chat</router-link><br /> -->
+    <!-- <router-link to="/game">Game</router-link> -->
+    <!-- I'll leave these here for now, but I'd  like to redesign navigation for the app. -->
+    <!-- </div> -->
     <router-view />
   </div>
 </template>
