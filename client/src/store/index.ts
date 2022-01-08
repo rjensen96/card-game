@@ -77,7 +77,6 @@ export default new Vuex.Store({
     },
     setGameState(state, gameState) {
       if (gameState.roundIsOver) {
-        console.log("resetting selected keys");
         state.selectedCardKeys = getBinaryRecordset();
       }
       state.gameState = gameState;
@@ -111,7 +110,7 @@ export default new Vuex.Store({
     },
     SOCKET_joinConfirmation({ commit }, data) {
       // commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
-      console.log("joinconfirmation:", data);
+
       commit("setRoomId", data.roomId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);

@@ -83,7 +83,7 @@ export default Vue.component("table-set", {
         phaseIndex,
         cards,
       };
-      console.log("playing cards", [...payload.cards]);
+
       this.$socket.emit("playCards", payload);
       this.$store.commit("unSelectAllCards");
     },

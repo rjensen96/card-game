@@ -49,9 +49,6 @@ export default Vue.component("waiting-room", {
     WaitingPersona,
     ProctorBoard,
   },
-  mounted() {
-    console.log("waiting room mounted");
-  },
   computed: {
     getRoomId(): string {
       return this.$store.state.roomId;

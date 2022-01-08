@@ -69,7 +69,6 @@ export default Vue.component("own-hand", {
   },
   components: { PhaseCard, ToolBox },
   mounted() {
-    console.log("rerendered hand.");
     this.marquee = document.getElementById("marquee");
     this.selectedKeys = this.$store.state.selectedCardKeys;
   },

@@ -35,11 +35,8 @@ export default Vue.component("phase-card", {
   },
   methods: {
     startDrag(event: any) {
-      // todo: emit this key up to OwnHand so that we can splice it out and say it is dragging.
-      // this works!
+      // emit this key up to OwnHand so that we can splice it out and say it is dragging.
       this.$emit("startDrag", { event, card: this.cardData });
-      // console.log("dragging key ", this.cardData.key);
-      // console.log("drag started", event);
     },
   },
 });
