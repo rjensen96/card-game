@@ -9,8 +9,6 @@ const logger = require("morgan");
 // todo: use body-parser?
 
 const indexRouter = require("./routes/index");
-const usersRouter = require("./routes/users");
-const cardsRouter = require("./routes/cards");
 
 const { initializeIO } = require("./sockets");
 const app = express();
@@ -25,10 +23,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-// refactoring to remove the bin/www files: http://expressjs.com/en/guide/migrating-4.html#app-gen
-// module.exports = app;
-
-app.set("port", process.env.PORT || 3000);
+app.set("port", process.env.PORT || 2105);
 
 const server = app.listen(app.get("port"), function () {
   debug("Express server listening on port " + server.address().port);
@@ -57,8 +52,6 @@ app.use((req, res, next) => {
 });
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
-app.use("/cards", cardsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
