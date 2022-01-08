@@ -1,3 +1,13 @@
+function roomHasGamename(room, gamename) {
+  for (let i = 0; i < room.players.length; i++) {
+    const pl = room.players[i];
+    if (pl.gamename.toLowerCase() === gamename.toLowerCase()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  *
  * @param {Array} cards
@@ -7,7 +17,17 @@ function isCardSet(cards) {
     return false;
   }
 
-  return cards.every((card) => card.value === cards[0].value);
+  const nonWilds = cards.filter((card) => !card.key.includes("W"));
+
+  if (!nonWilds.length) {
+    return false; // can't play just wilds.
+  }
+
+  const baseValue = nonWilds[0].value;
+
+  return cards.every(
+    (card) => card.value === baseValue || card.key.includes("W")
+  );
 }
 
 /**
@@ -15,21 +35,31 @@ function isCardSet(cards) {
  * @param {Array} cards
  */
 function isCardRun(cards) {
-  //todo: with wilds, this gets trickier.
-  // will need to have client keep better track of the order of cards (right now it's just order of selection);
-  // it matters what position they played the wild (really just if it's on either end, but still);
-
   if (cards.length === 0) {
     return false;
   }
 
-  // sort the hand and see if each is 1 greater than the previous.
-  cards.sort((a, b) => a.value - b.value);
+  // ensure that it's not just a bunch of wilds.
+  const nonWilds = cards.filter((card) => !card.key.includes("W"));
+  if (!nonWilds.length) {
+    return false;
+  }
+
+  // first card could be a wild, so required value is the first numeric card minus how many wilds at the beginning.
+  let x = 0;
+  while (cards[x].key.includes("W")) {
+    x++;
+  }
+
+  let requiredValue = cards[x].value - x + 1;
 
   for (let i = 0; i < cards.length - 1; i++) {
-    if (cards[i + 1].value !== cards[i].value + 1) {
+    const currentValue = cards[i + 1].value;
+    const isWild = cards[i + 1].key.includes("W");
+    if (currentValue !== requiredValue && !isWild) {
       return false;
     }
+    requiredValue++;
   }
   return true;
 }
@@ -43,7 +73,17 @@ function allSameColor(cards) {
     return false;
   }
 
-  return cards.every((card) => card.color === cards[0].color);
+  const nonWilds = cards.filter((card) => !card.key.includes("W"));
+
+  if (!nonWilds.length) {
+    return false; // can't play just wilds, that's nuts.
+  }
+
+  const baseColor = nonWilds[0].color;
+
+  return cards.every(
+    (card) => card.color === baseColor || card.key.includes("W")
+  );
 }
 
 async function handHasAllCards(hand, cards) {
@@ -74,6 +114,7 @@ function phaseIsComplete(phase) {
 }
 
 module.exports = {
+  roomHasGamename,
   isCardRun,
   isCardSet,
   allSameColor,
