@@ -1,40 +1,12 @@
 import { getEmptyCardArray, Card } from "@/types/card";
 import { getEmptyChatMessageArray } from "@/types/chat-message";
 import { getEmptyPlayerArray, Player } from "@/types/player";
+import _ from "lodash";
 import Vue from "vue";
 import Vuex from "vuex";
 
 Vue.use(Vuex);
 
-function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
-  // currently data is just an array of the names. This will change!
-  const playerArray: Player[] = data.map((player: any) => {
-    const playerData: Player = {
-      gamename: player.gamename,
-      phaseNumber: player.phaseNumber,
-      phase: player.phase,
-      points: player.points,
-      key: Math.random(),
-    };
-    return playerData;
-  });
-
-  return playerArray;
-}
-
-function getBinaryRecordset(): Record<string, boolean> {
-  const obj: Record<string, boolean> = {};
-  return obj;
-}
-
-// todo: ownPlayerData should be its own object.
-// have hand, phase, points nested under that.
-// todo: selectCard has business logic; that should probably move back to the calling component.
-
-// todo: playerId should be the socket id in use when a player joins a room.
-// the server should send that id back as "playerId"
-// that way when the server restarts, it doesn't frig everything up and crash.
-// need to send this playerId with every WS request to the server.
 export default new Vuex.Store({
   state: {
     chats: getEmptyChatMessageArray(),
@@ -42,15 +14,14 @@ export default new Vuex.Store({
     drawCard: null,
     gamename: "",
     hand: getEmptyCardArray(),
-    phase: {},
-    phaseNumber: 0,
+    // phase: {},
+    // phaseNumber: 0,
     playersInRoom: getEmptyPlayerArray(),
     playerId: "",
     points: 0,
     proctorMessage: "",
     roomId: "",
     gameState: null,
-    selectedCards: getEmptyCardArray(),
     selectedCardKeys: getBinaryRecordset(),
   },
   mutations: {
@@ -76,18 +47,28 @@ export default new Vuex.Store({
       state.drawCard = drawDiscard.draw;
       state.discardCard = drawDiscard.discard;
     },
-    setHand(state, hand) {
-      state.hand = hand;
+    setHand(state, newHand) {
+      // checks what is already in hand and keep the order the same.
+      // new cards will go on the end.
+      // this will preserve ability to reorder cards and help game state.
+
+      // todo: the reordering must be conditional.
+      // if people drag cards, reordering must not happen.
+
+      state.hand = getOrderedNewHand(state.hand, newHand);
+    },
+    setHandWithoutReorder(state, newHand) {
+      state.hand = newHand;
     },
     setPoints(state, points) {
       state.points = points;
     },
-    setPhase(state, phase) {
-      state.phase = phase;
-    },
-    setPhaseNumber(state, phaseNumber) {
-      state.phaseNumber = phaseNumber;
-    },
+    // setPhase(state, phase) {
+    //   state.phase = phase;
+    // },
+    // setPhaseNumber(state, phaseNumber) {
+    //   state.phaseNumber = phaseNumber;
+    // },
     setPlayerId(state, playerId) {
       state.playerId = playerId;
     },
@@ -95,6 +76,10 @@ export default new Vuex.Store({
       state.proctorMessage = proctorMessage;
     },
     setGameState(state, gameState) {
+      if (gameState.roundIsOver) {
+        console.log("resetting selected keys");
+        state.selectedCardKeys = getBinaryRecordset();
+      }
       state.gameState = gameState;
     },
     addChatMessage(state, data) {
@@ -105,14 +90,6 @@ export default new Vuex.Store({
     },
   },
   actions: {
-    SOCKET_joinConfirmation({ commit }, data) {
-      // commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
-      console.log("joinconfirmation:", data);
-      commit("setRoomId", data.roomId);
-      const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
-      commit("setPlayersInRoom", playersToAdd);
-      commit("setPlayerId", data.playerId);
-    },
     SOCKET_chatMessage({ commit }, data) {
       commit("addChatMessage", data);
     },
@@ -120,16 +97,38 @@ export default new Vuex.Store({
       commit("setRoomId", data.roomId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
-      commit("setPlayerId", data.playerId);
+    },
+    SOCKET_drawDiscard({ commit }, data) {
+      commit("setDrawDiscard", data);
     },
     SOCKET_gamenameConfirmation({ commit }, data) {
       commit("setGamename", data.gamename);
     },
+    SOCKET_gameState({ commit }, gameState) {
+      commit("setGameState", gameState);
+      const msg = getProctorMessage(this.state.gameState, this.state.gamename);
+      commit("setProctorMessage", msg);
+    },
+    SOCKET_joinConfirmation({ commit }, data) {
+      // commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
+      console.log("joinconfirmation:", data);
+      commit("setRoomId", data.roomId);
+      const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
+      commit("setPlayersInRoom", playersToAdd);
+    },
     SOCKET_ownPlayerData({ commit }, data) {
       commit("setHand", data.hand);
       commit("setPoints", data.points);
-      commit("setPhase", data.phase);
-      commit("setPhaseNumber", data.phaseNumber);
+    },
+    SOCKET_playerId({ commit }, playerId) {
+      commit("setPlayerId", playerId);
+    },
+    SOCKET_proctorMessage({ commit }, proctorMessage) {
+      const basicMsg = getProctorMessage(
+        this.state.gameState,
+        this.state.gamename
+      );
+      commit("setProctorMessage", proctorMessage + " " + basicMsg);
     },
     SOCKET_roomPlayerData({ commit }, data) {
       // due to some funky issue, Vue parses data into observer instead of data.
@@ -140,24 +139,54 @@ export default new Vuex.Store({
       const newPlayersData = getPlayerArrayFromData(data);
       commit("setPlayersInRoom", newPlayersData);
     },
-    SOCKET_drawDiscard({ commit }, data) {
-      commit("setDrawDiscard", data);
-    },
-    SOCKET_gameState({ commit }, gameState) {
-      commit("setGameState", gameState);
-      const msg = getProctorMessage(this.state.gameState, this.state.gamename);
-      commit("setProctorMessage", msg);
-    },
-    SOCKET_proctorMessage({ commit }, proctorMessage) {
-      const basicMsg = getProctorMessage(
-        this.state.gameState,
-        this.state.gamename
-      );
-      commit("setProctorMessage", proctorMessage + " " + basicMsg);
-    },
   },
   modules: {},
 });
+
+function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
+  // currently data is just an array of the names. This will change!
+  const playerArray: Player[] = data.map((player: any) => {
+    const playerData: Player = {
+      gamename: player.gamename,
+      phaseNumber: player.phaseNumber,
+      phase: player.phase,
+      points: player.points,
+      key: Math.random(),
+    };
+    return playerData;
+  });
+
+  return playerArray;
+}
+
+function getBinaryRecordset(): Record<string, boolean> {
+  const obj: Record<string, boolean> = {};
+  return obj;
+}
+
+/**
+ * Sets the order of the new hand to match most closely to the old hand.
+ * Returns a new array with the correct order.
+ * @param oldHand
+ * @param newHand
+ */
+function getOrderedNewHand(oldHand: Array<Card>, newHand: Array<Card>) {
+  const orderedHand = [];
+  for (let i = 0; i < oldHand.length; i++) {
+    // for each card in oldHand, get that card in newHand
+    const oldCard = oldHand[i];
+    const idxNew = _.findIndex(newHand, (card) => card.key === oldCard.key);
+
+    // push that card onto orderedHand
+    if (idxNew !== -1) {
+      orderedHand.push(...newHand.splice(idxNew, 1));
+    }
+  }
+
+  // push all remaining cards in newHand to orderedHand
+  orderedHand.push(...newHand);
+  return orderedHand;
+}
 
 /**
  * Returns some generic proctor message based on the game state.
