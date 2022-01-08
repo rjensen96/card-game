@@ -3,6 +3,7 @@ const PlayerModel = require("../models/player");
 const { phases } = require("../../types/phases");
 const { addPlayerToRoom } = require("./update");
 const { shuffle } = require("../../gameflow/utils");
+const { deleteOldRoomsAndPlayers } = require("./delete");
 
 /**
  * Creates a new room in the database with a randomly generated 4-letter ID.
@@ -21,9 +22,13 @@ async function createRoom() {
     return String.fromCharCode(...charCodes);
   };
 
-  // TEMPORARY: delete all the existing rooms and players to clean up the db
-  RoomModel.deleteMany({}, handleError);
-  PlayerModel.deleteMany({}, handleError);
+  // DB MGMT:
+  // For development: delete all the existing rooms and players to clean up the db
+  // RoomModel.deleteMany({}, handleError);
+  // PlayerModel.deleteMany({}, handleError);
+
+  // PRODUCTION: delete all rooms & players last seen 2+ days ago.
+  deleteOldRoomsAndPlayers();
 
   // get new UNIQUE room key.
   let newRoomId = "";
@@ -46,6 +51,7 @@ async function createRoom() {
     roundIsOver: false,
     gameStarted: false,
     gameIsOver: false,
+    lastSeen: new Date(),
   });
 
   // return the new room document
@@ -73,6 +79,7 @@ async function createPlayer(playerId, roomDocId) {
       hand: [],
       points: 0,
       phases: [...phases],
+      lastSeen: new Date(),
     });
 
     await addPlayerToRoom(newPlayer._id, roomDocId);
@@ -86,6 +93,7 @@ async function createPlayer(playerId, roomDocId) {
 //////////    UTIL TYPE THINGS    ///////////
 /////////////////////////////////////////////
 
+// this is used with the development DB MGMT lines, so leave for now.
 function handleError(err) {
   if (err) {
     return console.error(err);

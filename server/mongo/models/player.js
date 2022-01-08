@@ -9,6 +9,7 @@ const PlayerSchema = new Schema({
   hand: [],
   points: Number,
   phases: [],
+  lastSeen: Date,
 });
 
 module.exports = mongoose.model("Player", PlayerSchema);
