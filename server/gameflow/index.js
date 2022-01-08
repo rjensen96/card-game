@@ -4,13 +4,19 @@ const {
   getRoomOfPlayerId,
   getRoomByRoomId,
 } = require("../mongo/requests/read");
+
 const {
   sendGameState,
   sendPlayersOwnData,
   sendDrawDiscard,
   sendPublicPlayerData,
 } = require("../sockets/push-responses");
-const { shuffle, writeToJSON } = require("./utils");
+const {
+  shuffle,
+  ensureSocketJoinedRoom,
+  removeCardsFromHand,
+  addCardsToPhaseItem,
+} = require("./utils");
 const {
   handHasAllCards,
   isCardSet,
@@ -94,6 +100,9 @@ async function endCurrentRound(room, io) {
       // advance their phase if completed
       if (player.completedPhase) {
         player.phases.shift(); // removes phase[0] to advance phase.
+        if (player.phases.length === 0) {
+          room.gameIsOver = true;
+        }
       }
 
       // unset player gamestate flags
@@ -102,7 +111,7 @@ async function endCurrentRound(room, io) {
 
     // collect the discard pile
     room.drawPile.push(...room.discardPile);
-    room.discardPile = [];
+    room.discardPile = [room.drawPile.pop()];
 
     // shuffle the draw pile
     shuffle(room.drawPile);
@@ -124,21 +133,36 @@ async function endCurrentRound(room, io) {
   }
 }
 
-async function drawCard(io, socketId, pileName) {
-  const room = await getRoomOfPlayerId(socketId);
+async function drawCard(io, data) {
+  const { playerId, socket, pileName } = data;
+  const room = await getRoomOfPlayerId(playerId);
+  // TODO:
+  // this crashes with an unhandled promise rejection if I lock my computer and come back
+  // need to check what socketId is after lock/unlock
+  // also, should trycatch this whole thing.
+  // need a way to gracefully allow reconnecting.
+  // likely, that means using playerId instead of socketId.
+
+  if (room.gameIsOver) {
+    return;
+  }
+
+  ensureSocketJoinedRoom(socket, room.roomId);
+
   const { drew } = room;
-  const playerUp = room.players[0];
+  const playerUp = room.players[0]; // this is the line that dies if lock/unlock
 
   // SAFETY MEASURES:
   // ensure it's actually the turn of the player drawing
   // ensure that player hasn't already drawn
-  if (socketId !== playerUp.playerId) {
+
+  if (playerId !== playerUp.playerId) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit("proctorMessage", "It's not your turn, so you can't do that.");
   } else if (drew) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit("proctorMessage", "You already drew, so you can't do that.");
   }
 
@@ -152,7 +176,7 @@ async function drawCard(io, socketId, pileName) {
 
   if (card === null) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit("proctorMessage", `There's no card in the ${pileName} pile.`);
   }
 
@@ -171,21 +195,28 @@ async function drawCard(io, socketId, pileName) {
   sendDrawDiscard(room, io);
 }
 
-async function discard(io, socketId, card) {
-  const room = await getRoomOfPlayerId(socketId);
+async function discard(io, data) {
+  const { playerId, socket, card } = data;
+  const room = await getRoomOfPlayerId(playerId);
+
+  if (room.gameIsOver || !card) {
+    return;
+  }
+
+  ensureSocketJoinedRoom(socket, room.roomId);
 
   const { drew } = room;
   const playerUpId = room.players[0].playerId;
   const playerUp = room.players[0];
 
   // ensure it's ok for the player to discard (their turn and drew)
-  if (playerUpId !== socketId) {
+  if (playerUpId !== playerId) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit("proctorMessage", "It's not your turn, so you can't do that.");
   } else if (!drew) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit("proctorMessage", "You need to draw a card before discarding.");
   }
 
@@ -205,7 +236,7 @@ async function discard(io, socketId, card) {
 
   if (!removedCard) {
     return io
-      .to(socketId)
+      .to(socket.id)
       .emit(
         "proctorMessage",
         "Somehow you don't have that card. Try selecting and discarding again."
@@ -217,15 +248,19 @@ async function discard(io, socketId, card) {
 
   // if player did not complete their phase, take the cards in their phase and put those back in their hand.
   // then tell them why.
-  const phase = playerUp.phases[0];
-  const completedPhase = phaseIsComplete(phase);
-
-  if (!completedPhase && room.played) {
+  if (!playerUp.completedPhase && room.played) {
+    const phase = playerUp.phases[0];
     phase.forEach((phaseItem) => {
       hand.push(...phaseItem.cards);
       phaseItem.cards = [];
     });
-    io.to(socketId).emit(
+
+    playerUp.markModified("phases");
+    playerUp.markModified("hand");
+
+    // todo: this would be more effective as a chat message.
+    // the gameflow causes it to disappear as a proctorMessage
+    io.to(socket.id).emit(
       "proctorMessage",
       "You didn't complete your phase, so I gave your cards back."
     );
@@ -241,6 +276,7 @@ async function discard(io, socketId, card) {
   sendGameState(room, io);
   sendPlayersOwnData(room, io);
   sendDrawDiscard(room, io);
+  sendPublicPlayerData(room, io);
 
   // Did the player Go Out (no more cards) ? If so, end the current round.
   if (hand.length === 0) {
@@ -262,8 +298,15 @@ function scoreHand(hand) {
   return points;
 }
 
-async function playCards(io, playerId, data) {
+async function playCards(io, data) {
+  const { playerId, socket } = data;
   const room = await getRoomOfPlayerId(playerId);
+
+  if (room.gameIsOver) {
+    return;
+  }
+
+  ensureSocketJoinedRoom(socket, room.roomId);
 
   // make sure it's the player's turn.
   const playerUp = room.players[0];
@@ -333,7 +376,14 @@ async function playCards(io, playerId, data) {
     return io.to(playerId).emit("proctorMessage", "Too few cards.");
   }
 
-  phaseItem.cards.push(...data.cards);
+  const playedKeys = data.cards.map((card) => card.key);
+
+  // remove the cards from hand in order of playedKeys
+  // this avoids people spoofing the values of cards in data.cards while keeping keys as ones they have.
+  const playedCards = removeCardsFromHand(playedKeys, playerUp.hand);
+
+  // might matter which end the cards go on; this function checks that
+  addCardsToPhaseItem(playedCards, phaseItem);
 
   // ensure pattern matches.
   if (phaseItem.pattern === "set" && !isCardSet(phaseItem.cards)) {
@@ -356,29 +406,14 @@ async function playCards(io, playerId, data) {
       .emit("proctorMessage", "All cards must be of same color.");
   }
 
-  // at this point, it's valid.
-  // remove the cards from their hand and put them in the phases.
+  // at this point, it's valid, so we can save everything in the database and broadcast results.
 
-  /*
-    1. set the phase item at phase index to the current version of phaseItem
-    2. Remove the cards from player's hand
-    3. broadcast results.
-  */
-
+  room.played = true;
   // if the phase is now a completed phase, set the flag on user object
   if (phaseIsComplete(targetPlayer.phases[0])) {
     targetPlayer.completedPhase = true;
   }
 
-  // 2. Remove the cards from player's hand
-  const playedKeys = data.cards.map((card) => card.key);
-  playerUp.hand = playerUp.hand.filter((card) => {
-    if (!playedKeys.includes(card.key)) {
-      return card;
-    }
-  });
-
-  // save everything.
   // ANNOYING MONGOOSE THING WITH NESTED PROPERTIES:
   // https://stackoverflow.com/questions/24054552/mongoose-not-saving-nested-object
   // it won't diff nested objects, so you have to tell it if you modified a nested.
@@ -388,11 +423,7 @@ async function playCards(io, playerId, data) {
   await targetPlayer.save();
   await room.save();
 
-  room.players.forEach((player) => {
-    console.log(player.gamename + ".phases", player.phases);
-  });
-
-  // 3. broadcast results.
+  // broadcast results.
   sendGameState(room, io);
   sendPlayersOwnData(room, io);
   sendPublicPlayerData(room, io);

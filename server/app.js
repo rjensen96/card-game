@@ -12,7 +12,7 @@ const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const cardsRouter = require("./routes/cards");
 
-const initializeIO = require("./sockets");
+const { initializeIO } = require("./sockets");
 const app = express();
 
 // view engine setup
@@ -78,7 +78,6 @@ app.use(function (err, req, res, next) {
 
 /**************** MONGOOSE CONFIG *******************/
 const mongoose = require("mongoose");
-const { createRoom } = require("./mongo/requests/create");
 const { mongo_pass, mongo_user } = require("./config");
 // see config.js.example.
 // to add your credentials, create config.js at the top-level of the server folder and copy/paste config.js.example
