@@ -52,7 +52,6 @@ export default Vue.component("draw-discard", {
           card: selectedCards[0],
           playerId,
         });
-        this.$store.commit("unSelectAllCards");
       } else if (gameState.drew && selectedCards.length > 1) {
         this.$store.commit(
           "setProctorMessage",
@@ -66,6 +65,8 @@ export default Vue.component("draw-discard", {
       } else if (!gameState.drew) {
         this.$socket.emit("takeCard", { pileName: "discard", playerId });
       }
+
+      this.$store.commit("unSelectAllCards");
     },
   },
 });

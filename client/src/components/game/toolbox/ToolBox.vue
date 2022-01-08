@@ -47,12 +47,12 @@ export default Vue.component("tool-box", {
   computed: {
     // before, I had this set up such that numbers and pallete would be selected long-term
     // but that doesn't make much sense. So I disabled it.
-    // numberSelected() {
-    //   return this.sortMethod === HandSort.value ? "selected" : "";
-    // },
-    // palleteSelected() {
-    //   return this.sortMethod === HandSort.color ? "selected" : "";
-    // },
+    numberSelected() {
+      return this.sortMethod === HandSort.value ? "selected" : "";
+    },
+    palleteSelected() {
+      return this.sortMethod === HandSort.color ? "selected" : "";
+    },
     marqueeSelected() {
       return this.selectMethod === HandSelect.marquee ? "selected" : "";
     },

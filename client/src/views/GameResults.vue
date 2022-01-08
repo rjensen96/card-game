@@ -74,6 +74,8 @@ export default Vue.extend({
   },
   methods: {
     completionPercent(player: Player): number {
+      // fixme: error here.
+      // this says people who merely made it to phase 10 get 100% completion, but that's not true.
       return (player.phaseNumber / 10) * 100;
     },
     floatCrown() {

@@ -11,6 +11,7 @@
   >
     <div id="marquee" />
     <tool-box
+      v-if="!roundIsOver"
       @sortUpdate="setSortType"
       @selectUpdate="setSelectionType"
       @sortHand="handleSortHand"
@@ -37,6 +38,12 @@
   That would also show a different message if they can't play there
 */
 
+// todo: there is a pretty big problem with the selectedKeys {} in here not resetting when it should.
+// I'd rather this be logically sound than have to change it every little time.
+// IDEA: so it resolves itself when someone CLICKS advance round...
+// but we just want to fully rerender the hand when the round advances.
+// that will reset all the variables for everybody.
+// so... when the round advances, we need to change some key on OwnHand to trigger a rerender.
 import Vue from "vue";
 import PhaseCard from "./PhaseCard.vue";
 import { HandSort, HandSelect } from "../../types/toolbox";
@@ -45,6 +52,7 @@ import _ from "lodash";
 
 export default Vue.component("own-hand", {
   name: "OwnHand",
+  props: ["roundIsOver"],
   data() {
     return {
       mouseIsDown: false,
@@ -61,18 +69,30 @@ export default Vue.component("own-hand", {
   },
   components: { PhaseCard, ToolBox },
   mounted() {
+    console.log("rerendered hand.");
     this.marquee = document.getElementById("marquee");
+    this.selectedKeys = this.$store.state.selectedCardKeys;
   },
   computed: {
     hand() {
-      return this.$store.state.hand;
+      // this actually does need to be a persistent thing where it sorts each time by the user seleciton.
+      // it's a little annoying because the drawn card can be hard to identify, lands in the middle.
+      // but that is fixable (with extra work that I don't wanna do)
+      const { hand } = this.$store.state;
+      return hand;
+
+      // const sortKey =
+      //   this.cardSortMethod === HandSort.value ? "value" : "color";
+
+      // return hand.sort((a, b) => a[sortKey] - b[sortKey]);
     },
     handEls() {
       return document.getElementsByClassName("gameCard");
     },
-    roundIsOver() {
-      return this.$store.state.gameState.roundIsOver;
-    },
+    // roundIsOver() {
+    //   const { roundIsOver } = this.$store.state.gameState;
+    //   return roundIsOver;
+    // },
     cursorClass() {
       const className =
         this.cardSelectionMethod === HandSelect.marquee
@@ -101,12 +121,15 @@ export default Vue.component("own-hand", {
       const sortKey = sortType === HandSort.value ? "value" : "color";
       const { hand } = this.$store.state;
       hand.sort((a, b) => a[sortKey] - b[sortKey]);
-      this.$store.commit("setHand", hand);
+      this.$store.commit("setHandWithoutReorder", hand);
     },
     handleMouseDown(event) {
       if (this.cardSelectionMethod !== HandSelect.marquee) {
         return;
       }
+
+      this.selectedKeys = this.$store.state.selectedCardKeys;
+
       this.marquee.style.display = "block";
 
       // get fixed coordinates
@@ -228,7 +251,7 @@ export default Vue.component("own-hand", {
       hand.splice(indexPaste, 0, card);
 
       // update state
-      this.$store.commit("setHand", hand);
+      this.$store.commit("setHandWithoutReorder", hand);
     },
   },
 });

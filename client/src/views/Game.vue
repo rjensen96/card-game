@@ -11,7 +11,7 @@
         />
       </div>
       <div id="hand">
-        <own-hand />
+        <own-hand :roundIsOver="roundIsOver" />
       </div>
     </div>
   </div>
@@ -39,6 +39,9 @@ export default Vue.extend({
         return 0;
       });
     },
+    roundIsOver(): boolean {
+      return this.$store.state.gameState.roundIsOver;
+    },
   },
 });
 </script>
@@ -48,7 +51,7 @@ export default Vue.extend({
 //https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Introduction#grid_layout
 #game-container {
   display: flex;
-  margin: 20px 60px 200px 0px;
+  margin: 20px 0px 200px 0px;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;

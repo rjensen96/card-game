@@ -3,6 +3,7 @@
     <div class="headerData">
       <h2>{{ displayName }}</h2>
       <h2 class="score">Score: {{ this.player.points }}</h2>
+      <h2 class="score">{{ completionPercent }}</h2>
     </div>
     <div class="cardArea">
       <div
@@ -53,6 +54,9 @@ export default Vue.component("table-set", {
         ? `${this.player.gamename} (You)`
         : this.player.gamename;
     },
+    completionPercent() {
+      return ((this.player.phaseNumber - 1) / 10) * 100 + "%";
+    },
   },
   methods: {
     setLabel(phaseItem) {
@@ -62,13 +66,24 @@ export default Vue.component("table-set", {
       return `${phaseItem.pattern} of ${phaseItem.size}`;
     },
     playSelectedCards(phaseIndex) {
-      const { selectedCardKeys, hand } = this.$store.state;
+      const { drew } = this.$store.state.gameState;
+      const { selectedCardKeys, hand, playerId } = this.$store.state;
+
+      if (!drew) {
+        return this.$store.commit(
+          "setProctorMessage",
+          "You must draw before playing cards. Take a card from the draw or discard pile!"
+        );
+      }
+
       const cards = hand.filter((card) => selectedCardKeys[card.key]);
       const payload = {
+        playerId,
         gamename: this.player.gamename,
         phaseIndex,
         cards,
       };
+      console.log("playing cards", [...payload.cards]);
       this.$socket.emit("playCards", payload);
       this.$store.commit("unSelectAllCards");
     },
