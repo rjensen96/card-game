@@ -1,12 +1,13 @@
 const { Server, Socket } = require("socket.io");
 
 const { drawCard, discard, playCards, advanceRound } = require("../gameflow");
+const { ensureSocketJoinedRoom } = require("../gameflow/utils");
+const { roomHasGamename } = require("../gameflow/validation");
 
 const { createRoom, createPlayer } = require("../mongo/requests/create");
 
 const {
   getPublicRoomData,
-  getPlayerByPlayerId,
   getRoomOfPlayerId,
   getRoomByRoomId,
 } = require("../mongo/requests/read");
@@ -75,11 +76,11 @@ function handleCreateRoom(socket) {
       const payload = {
         roomId: room.roomId,
         roomPlayerData,
-        playerId: player.playerId,
       };
 
       // emit join confirmation to be handled in client
       io_.to(room.roomId).emit("joinConfirmation", payload);
+      io_.to(socket.id).emit("playerId", player.playerId);
     } catch (error) {
       console.error(error);
     }
@@ -97,7 +98,7 @@ function handleJoin(socket) {
 
     if (!room) {
       // send error that room does not exist;
-      console.log("room does not exist");
+      io_.to(socket.id).emit("proctorMessage", "That room does not exist!");
       return;
     }
 
@@ -109,10 +110,10 @@ function handleJoin(socket) {
     const payload = {
       roomId: targetRoomId,
       roomPlayerData,
-      playerId: player.playerId,
     };
 
     io_.to(room.roomId).emit("joinConfirmation", payload);
+    io_.to(socket.id).emit("playerId", player.playerId);
   });
 }
 
@@ -129,10 +130,23 @@ function handleDisconnect(socket) {
  */
 function handleSetGamename(socket) {
   socket.on("setGamename", async (data) => {
+    // ensure no other player in room has the requested name.
+    const room = await getRoomOfPlayerId(data.playerId);
+    ensureSocketJoinedRoom(socket, room.roomId);
+
+    if (roomHasGamename(room, data.gamename)) {
+      return io_
+        .to(socket.id)
+        .emit(
+          "proctorMessage",
+          "That player is already here! Please enter a unique name."
+        );
+    }
+
     await setPlayerGamename(data.playerId, data.gamename);
-    const player = await getPlayerByPlayerId(data.playerId);
-    const roomPlayerData = await getPublicRoomData(player.room._id);
-    io_.to(player.room.roomId).emit("roomPlayerData", roomPlayerData);
+    const roomPlayerData = await getPublicRoomData(room._id);
+    io_.to(socket.id).emit("gamenameConfirmation", { gamename: data.gamename });
+    io_.to(room.roomId).emit("roomPlayerData", roomPlayerData);
   });
 }
 
@@ -145,6 +159,7 @@ function handleStartGame(socket) {
       return; // prevent people from doing dumb stuff like restarting the game randomly.
     }
 
+    ensureSocketJoinedRoom(socket, roomId);
     // a better and faster way to do these updates would be to pass the room document around
     // then I could do all the modifications on the document, then save it once.
     // that would significantly reduce the number of read/write requests that go all the way to OREGON.
@@ -162,19 +177,19 @@ function handleStartGame(socket) {
 
 function handlePlayCards(socket) {
   socket.on("playCards", (data) => {
-    playCards(io_, socket.id, data);
+    playCards(io_, { ...data, socket });
   });
 }
 
 function handleTakeCard(socket) {
   socket.on("takeCard", (data) => {
-    drawCard(io_, socket.id, data.pileName);
+    drawCard(io_, { ...data, socket });
   });
 }
 
 function handleDiscard(socket) {
   socket.on("discard", (data) => {
-    discard(io_, socket.id, data.card);
+    discard(io_, { ...data, socket });
   });
 }
 
@@ -192,4 +207,4 @@ function handleChat(socket) {
   });
 }
 
-module.exports = initializeIO;
+module.exports = { initializeIO };

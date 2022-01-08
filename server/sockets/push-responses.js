@@ -3,6 +3,11 @@ function sendDrawDiscard(room, io) {
     const draw = room.drawPile.pop() || null;
     const discard = room.discardPile.pop() || null;
 
+    // mask the values on draw so that people can't know what it is!
+    draw.value = 0;
+    draw.text = "?";
+    draw.color = 100; // some huge value, clients will default to black.
+
     room.players.forEach((player) => {
       io.to(player.playerId).emit("drawDiscard", { draw, discard });
     });
@@ -13,12 +18,15 @@ function sendDrawDiscard(room, io) {
 
 function sendGameState(room, io) {
   try {
+    const { drew, played, discarded, roundIsOver, gameIsOver } = room;
+
     const gameState = {
       playerUp: room.players[0].gamename,
-      drew: room.drew,
-      played: room.played,
-      discarded: room.discarded,
-      roundIsOver: room.roundIsOver,
+      drew,
+      played,
+      discarded,
+      roundIsOver,
+      gameIsOver,
     };
 
     io.to(room.roomId).emit("gameState", gameState);

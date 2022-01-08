@@ -14,6 +14,7 @@ const RoomSchema = new Schema({
   discarded: Boolean,
   roundIsOver: Boolean,
   gameStarted: Boolean,
+  gameIsOver: Boolean,
 });
 
 module.exports = mongoose.model("Room", RoomSchema);

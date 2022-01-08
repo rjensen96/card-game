@@ -31,17 +31,21 @@ async function createRoom() {
     newRoomId = randomRoomId();
   } while (!RoomModel.exists({ roomId: newRoomId }));
 
+  const drawPile = generateDeck(true);
+  const discardPile = [drawPile.pop()];
+
   // create room with the new id
   const newRoom = await RoomModel.create({
     roomId: newRoomId,
     players: [],
-    drawPile: generateDeck(false),
-    discardPile: [],
+    drawPile,
+    discardPile,
     drew: false,
     played: false,
     discarded: false,
     roundIsOver: false,
     gameStarted: false,
+    gameIsOver: false,
   });
 
   // return the new room document
@@ -102,6 +106,17 @@ function generateDeck(doShuffle) {
         deck.push(card);
       }
     }
+  }
+
+  // also add some wild cards.
+  for (let round = 0; round < 8; round++) {
+    const card = {
+      value: 0,
+      text: "W",
+      color: 0,
+      key: "W-" + round,
+    };
+    deck.push(card);
   }
 
   if (doShuffle) {
