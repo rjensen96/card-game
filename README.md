@@ -6,6 +6,10 @@ This app is an implementation of the card game [Phase 10](https://www.unorules.c
 
 Try it out here, hosted on AWS Lightsail: http://52.41.20.112/
 
+![Waiting room](client/src/assets/waiting.png)
+![Main game](client/src/assets/game.png)
+![Winners](client/src/assets/winners.png)
+
 ## Stack
 
 This project has a Vue frontend and an Express/Node.js backend with Mongo db. All communication between clients and server uses the socket.io framework. No REST api this time.
