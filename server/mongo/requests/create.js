@@ -102,7 +102,7 @@ function handleError(err) {
 
 function generateDeck(doShuffle) {
   const deck = [];
-  for (let round = 0; round < 2; round++) {
+  for (let round = 0; round < 4; round++) {
     for (let color = 1; color < 5; color++) {
       for (let value = 1; value < 13; value++) {
         const card = {
@@ -117,7 +117,7 @@ function generateDeck(doShuffle) {
   }
 
   // also add some wild cards.
-  for (let round = 0; round < 8; round++) {
+  for (let round = 0; round < 16; round++) {
     const card = {
       value: 0,
       text: "W",

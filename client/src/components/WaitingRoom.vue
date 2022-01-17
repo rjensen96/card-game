@@ -60,7 +60,7 @@ export default Vue.component("waiting-room", {
       const players: Player[] = this.$store.state.playersInRoom;
       const rv: boolean =
         players.length < 2 ||
-        players.length > 6 ||
+        // players.length > 6 ||
         players.some((player) => player.gamename === "");
 
       return rv;
