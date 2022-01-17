@@ -61,7 +61,10 @@ function isCardRun(cards) {
   for (let i = 0; i < cards.length - 1; i++) {
     const currentValue = cards[i + 1].value;
     const isWild = cards[i + 1].key.includes("W");
-    if (currentValue !== requiredValue && !isWild) {
+    if (requiredValue > 12) {
+      // card run cannot go above 12 even with wilds
+      return false;
+    } else if (currentValue !== requiredValue && !isWild) {
       return false;
     }
     requiredValue++;

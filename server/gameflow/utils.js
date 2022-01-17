@@ -49,63 +49,18 @@ function removeCardsFromHand(cardKeys, hand) {
  * Adds provided cards to the given phaseItem, mutates phaseItem. If the phase item already has cards (and is a run), adds cards to front or back of phaseItem depending on which end they might fit on. DOES NOT VALIDATE THE PHASE ITEM.
  * @param {*} cards
  * @param {*} phaseItem
+ * @param {string} targetSideToPlay - 'right', 'left', or null. Which side of the hand player wants to stick cards
  */
-function addCardsToPhaseItem(cards, phaseItem) {
-  function getRunEndValues() {
-    let maxVal = 0;
-    let minVal = 0;
-    let idx = 0;
-
-    // move index to first non-wild card
-    while (phaseItem.cards[idx].key.includes("W")) {
-      idx++;
-    }
-
-    // calculate imputed min and max values
-    minVal = phaseItem.cards[idx].value - idx;
-    maxVal = minVal + phaseItem.cards.length - 1;
-    return { maxVal, minVal };
-  }
-
-  if (phaseItem.pattern === "run" && phaseItem.cards.length > 0) {
-    // try to determine which end the cards should go on.
-    let { maxVal, minVal } = getRunEndValues();
-
-    // suppose this:
-    // phaseItem.cards => 3, 4, 5, 6
-    // cards => 2, 1, 7
-
-    // that is a legal move, so it should be accommodated.
-
-    // todo: in client, we should actually have two buttons on the TableSets.
-    // a button on the right and left of the set
-    // if they could just tell us where they wanted to play the cards, that would make this a lot easier!
-
-    while (cards.length) {
-      const initialLength = cards.length;
-      for (let i = 0; i < cards.length; i++) {
-        const isWild = cards[i].key.includes("W");
-
-        // forbid a wild to take minVal below 1
-        if (isWild && minVal === 1) {
-          phaseItem.cards.push(...cards.splice(i, 1));
-        } else if (cards[i].value === maxVal + 1) {
-          phaseItem.cards.push(...cards.splice(i, 1));
-          maxVal++;
-        } else if (cards[i].value === minVal - 1) {
-          phaseItem.cards.unshift(...cards.splice(i, 1));
-          minVal--;
-        }
-      }
-      if (cards.length === initialLength) {
-        // means our fancy logic did nothing, so just cram everything on the end and let validation handle it.
-        phaseItem.cards.push(...cards);
-        cards = []; // will cause loop to end.
-      }
-    }
+function addCardsToPhaseItem(cards, phaseItem, targetSideToPlay) {
+  if (targetSideToPlay === "left") {
+    phaseItem.cards.unshift(...cards);
   } else {
+    // this covers right and null.
+    // null only happens if the phase item has no cards, which means push is fine.
     phaseItem.cards.push(...cards);
   }
+
+  return;
 }
 
 /**

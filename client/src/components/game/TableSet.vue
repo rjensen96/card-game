@@ -11,6 +11,9 @@
         v-for="(phaseItem, phaseIndex) in this.player.phase"
         :key="phaseIndex"
         @click="playSelectedCards(phaseIndex)"
+        @mouseenter="handleMouseEnter($event, phaseIndex)"
+        @mouseleave="handleMouseLeave"
+        @mousemove="handleMouseMove($event, phaseIndex)"
       >
         <p>{{ setLabel(phaseItem) }}</p>
 
@@ -21,12 +24,29 @@
 
         <!-- Render cards played on phase if they exist -->
         <div v-else class="cards">
+          <div class="center arrow">
+            <transition name="slide-fade">
+              <arrow-right-thick
+                :size="18"
+                v-if="displayArrow(phaseIndex, 'left')"
+              />
+            </transition>
+          </div>
+
           <phase-card
             v-for="card in phaseItem.cards"
             :cardData="card"
             :key="card.key"
             :baseClass="'tableCard'"
           />
+          <div class="center arrow">
+            <transition name="slide-fade">
+              <arrow-left-thick
+                :size="18"
+                v-if="displayArrow(phaseIndex, 'right')"
+              />
+            </transition>
+          </div>
         </div>
       </div>
     </div>
@@ -35,16 +55,20 @@
 
 <script>
 import Vue from "vue";
-
-// todo: add some feature banning the playage on other peoples sets if current player hasn't completed their phase
-// (still need to validate that on server side, but helps gameplay ease)
-
-// TODO: the bug here is that the computed phase() prop is no good
-// need to use the phase object attached to the player prop.
+import ArrowLeftThick from "vue-material-design-icons/ArrowLeftThick.vue";
+import ArrowRightThick from "vue-material-design-icons/ArrowRightThick.vue";
 
 export default Vue.component("table-set", {
   name: "TableSet",
   props: ["player"],
+  data() {
+    return {
+      targetPhaseIndex: null,
+      targetSideToPlay: null, // 'right' || 'left'
+      targetSetClientRect: null,
+    };
+  },
+  components: { ArrowLeftThick, ArrowRightThick },
   computed: {
     phase() {
       return this.player.phase;
@@ -59,6 +83,33 @@ export default Vue.component("table-set", {
     },
   },
   methods: {
+    handleMouseEnter($event, phaseIndex) {
+      console.log("mouse is over", $event);
+      console.log("bounding rect:", $event.target.getBoundingClientRect());
+      this.targetSetClientRect = $event.target.getBoundingClientRect();
+      this.targetPhaseIndex = phaseIndex;
+    },
+    handleMouseMove($event, phaseIndex) {
+      const centerX = Math.floor(
+        (this.targetSetClientRect.right + this.targetSetClientRect.left) / 2
+      );
+
+      if ($event.clientX >= centerX) {
+        this.targetSideToPlay = "right";
+      } else {
+        this.targetSideToPlay = "left";
+      }
+    },
+    handleMouseLeave() {
+      this.targetPhaseIndex = null;
+      this.targetSideToPlay = null;
+    },
+    displayArrow(phaseIndex, rightLeft) {
+      return (
+        phaseIndex === this.targetPhaseIndex &&
+        rightLeft === this.targetSideToPlay
+      );
+    },
     setLabel(phaseItem) {
       if (phaseItem.pattern === "color") {
         return `${phaseItem.size} cards of one color`;
@@ -82,6 +133,7 @@ export default Vue.component("table-set", {
         gamename: this.player.gamename,
         phaseIndex,
         cards,
+        targetSideToPlay: this.targetSideToPlay,
       };
 
       this.$socket.emit("playCards", payload);
@@ -121,7 +173,7 @@ export default Vue.component("table-set", {
   cursor: pointer;
 
   .cardSet {
-    padding: 15px;
+    padding: 10px;
     background-color: #ededed;
     transition: 200ms;
 
@@ -151,5 +203,29 @@ export default Vue.component("table-set", {
       border: 1px solid #d1d1d1;
     }
   }
+}
+
+.center {
+  display: flex;
+  margin: auto;
+}
+
+.arrow {
+  width: 18px;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.35s ease;
+  width: 100%;
+}
+
+.slide-fade-enter,
+.slide-fade-leave-to {
+  opacity: 0;
+  color: #ededed;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.4s ease;
 }
 </style>

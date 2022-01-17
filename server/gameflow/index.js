@@ -295,7 +295,7 @@ function scoreHand(hand) {
 
 async function playCards(io, data) {
   try {
-    const { playerId, socket } = data;
+    const { playerId, socket, targetSideToPlay } = data;
     const room = await getRoomOfPlayerId(playerId);
 
     if (room.gameIsOver) {
@@ -380,7 +380,7 @@ async function playCards(io, data) {
     const playedCards = removeCardsFromHand(playedKeys, playerUp.hand);
 
     // might matter which end the cards go on; this function checks that
-    addCardsToPhaseItem(playedCards, phaseItem);
+    addCardsToPhaseItem(playedCards, phaseItem, targetSideToPlay);
 
     // ensure pattern matches.
     if (phaseItem.pattern === "set" && !isCardSet(phaseItem.cards)) {
