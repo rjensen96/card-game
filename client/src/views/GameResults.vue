@@ -22,7 +22,7 @@
         <tr v-for="player in players" :key="player.key">
           <td class="playerName">{{ player.gamename }}</td>
           <td>{{ player.points }}</td>
-          <td>{{ completionPercent(player) }}%</td>
+          <td>Phase {{ highestCompletedPhase(player) }}</td>
         </tr>
       </table>
     </div>
@@ -73,10 +73,8 @@ export default Vue.extend({
     },
   },
   methods: {
-    completionPercent(player: Player): number {
-      // fixme: error here.
-      // this says people who merely made it to phase 10 get 100% completion, but that's not true.
-      return (player.phaseNumber / 10) * 100;
+    highestCompletedPhase(player: Player): number {
+      return player.phaseNumber - 1;
     },
     floatCrown() {
       const crown = document.getElementById("crown");

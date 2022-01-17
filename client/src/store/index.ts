@@ -110,7 +110,6 @@ export default new Vuex.Store({
     },
     SOCKET_joinConfirmation({ commit }, data) {
       // commit("resetChats"); // in future maybe grab previous room messages, but for now just reset the state.
-
       commit("setRoomId", data.roomId);
       const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
       commit("setPlayersInRoom", playersToAdd);
@@ -134,7 +133,6 @@ export default new Vuex.Store({
       // the workaround is to serialize it again and parse it again.
       // https://stackoverflow.com/questions/52873516/vue-js-returns-ob-observer-data-instead-of-my-array-of-objects
 
-      // actually update: I think we don't need below line because it should be observable.
       const newPlayersData = getPlayerArrayFromData(data);
       commit("setPlayersInRoom", newPlayersData);
     },

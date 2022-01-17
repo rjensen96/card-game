@@ -3,7 +3,7 @@
     <div class="headerData">
       <h2>{{ displayName }}</h2>
       <h2 class="score">Score: {{ this.player.points }}</h2>
-      <h2 class="score">{{ completionPercent }}</h2>
+      <h2 class="score">Phase {{ currentPhase }}</h2>
     </div>
     <div class="cardArea">
       <div
@@ -54,8 +54,8 @@ export default Vue.component("table-set", {
         ? `${this.player.gamename} (You)`
         : this.player.gamename;
     },
-    completionPercent() {
-      return ((this.player.phaseNumber - 1) / 10) * 100 + "%";
+    currentPhase() {
+      return this.player.phaseNumber;
     },
   },
   methods: {
