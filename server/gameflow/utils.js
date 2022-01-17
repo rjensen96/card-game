@@ -77,10 +77,19 @@ function addCardsToPhaseItem(cards, phaseItem) {
 
     // that is a legal move, so it should be accommodated.
 
+    // todo: in client, we should actually have two buttons on the TableSets.
+    // a button on the right and left of the set
+    // if they could just tell us where they wanted to play the cards, that would make this a lot easier!
+
     while (cards.length) {
       const initialLength = cards.length;
       for (let i = 0; i < cards.length; i++) {
-        if (cards[i].value === maxVal + 1) {
+        const isWild = cards[i].key.includes("W");
+
+        // forbid a wild to take minVal below 1
+        if (isWild && minVal === 1) {
+          phaseItem.cards.push(...cards.splice(i, 1));
+        } else if (cards[i].value === maxVal + 1) {
           phaseItem.cards.push(...cards.splice(i, 1));
           maxVal++;
         } else if (cards[i].value === minVal - 1) {

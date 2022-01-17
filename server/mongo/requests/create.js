@@ -104,7 +104,7 @@ function generateDeck(doShuffle) {
   const deck = [];
   for (let round = 0; round < 2; round++) {
     for (let color = 1; color < 5; color++) {
-      for (let value = 1; value < 12; value++) {
+      for (let value = 1; value < 13; value++) {
         const card = {
           value,
           text: value.toFixed(0),
@@ -133,4 +133,4 @@ function generateDeck(doShuffle) {
   return deck;
 }
 
-module.exports = { createRoom, createPlayer };
+module.exports = { createRoom, createPlayer, generateDeck };

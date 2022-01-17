@@ -1,5 +1,6 @@
 //  we want to make this more modular.
 // validations & checks should be separate functions that return true/false to tell whether to return.
+const { generateDeck } = require("../mongo/requests/create");
 const {
   getRoomOfPlayerId,
   getRoomByRoomId,
@@ -49,16 +50,36 @@ async function advanceRound(room, io) {
       return;
     }
 
-    // endCurrentRound already took care of shuffling, collecting cards, etc.
-    // need to deal new cards though.
+    room.players.forEach((player) => {
+      // reset their hand
+      player.hand = [];
+
+      // advance their phase if completed
+      if (player.completedPhase) {
+        player.phases.shift(); // removes phase[0] to advance phase.
+        if (player.phases.length === 0) {
+          room.gameIsOver = true;
+        }
+      }
+
+      // unset player gamestate flags
+      player.completedPhase = false;
+    });
+
+    room.drawPile = generateDeck(true);
+    room.discardPile = [room.drawPile.pop()];
+
+    // unset all room gamestate flags
+    room.drew = false;
+    room.played = false;
+    room.discarded = false;
 
     room.roundIsOver = false;
-    const { drawPile } = room;
 
     // deal cards (this should probably be its own function)
     for (let i = 0; i < 10; i++) {
       room.players.forEach((player) => {
-        player.hand.push(drawPile.pop());
+        player.hand.push(room.drawPile.pop());
       });
     }
 
@@ -80,46 +101,13 @@ async function endCurrentRound(room, io) {
   try {
     room.roundIsOver = true;
 
-    // collect everyone's cards, calculate points, shuffle the deck.
+    // calculate points
     room.players.forEach((player) => {
       // get their hand
       const hand = player.hand;
       // score their hand
       player.points += scoreHand(hand);
-      // collect their hand
-      room.drawPile.push(...hand);
-      player.hand = [];
-
-      // collect all cards from their phases
-      const phase = player.phases[0];
-      phase.forEach((phaseItem) => {
-        room.drawPile.push(...phaseItem.cards);
-        phaseItem.cards = [];
-      });
-
-      // advance their phase if completed
-      if (player.completedPhase) {
-        player.phases.shift(); // removes phase[0] to advance phase.
-        if (player.phases.length === 0) {
-          room.gameIsOver = true;
-        }
-      }
-
-      // unset player gamestate flags
-      player.completedPhase = false;
     });
-
-    // collect the discard pile
-    room.drawPile.push(...room.discardPile);
-    room.discardPile = [room.drawPile.pop()];
-
-    // shuffle the draw pile
-    shuffle(room.drawPile);
-
-    // unset all room gamestate flags
-    room.drew = false;
-    room.played = false;
-    room.discarded = false;
 
     // re-write db and tell everyone that the round ended.
     const promises = [];
@@ -128,6 +116,7 @@ async function endCurrentRound(room, io) {
     await Promise.all(promises);
 
     sendGameState(room, io);
+    sendPublicPlayerData(room, io);
   } catch (error) {
     console.error(error);
   }
@@ -137,12 +126,6 @@ async function drawCard(io, data) {
   try {
     const { playerId, socket, pileName } = data;
     const room = await getRoomOfPlayerId(playerId);
-    // TODO:
-    // this crashes with an unhandled promise rejection if I lock my computer and come back
-    // need to check what socketId is after lock/unlock
-    // also, should trycatch this whole thing.
-    // need a way to gracefully allow reconnecting.
-    // likely, that means using playerId instead of socketId.
 
     if (room.gameIsOver) {
       return;
