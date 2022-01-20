@@ -26,8 +26,8 @@
 
 <script lang="ts">
 import { Vue } from "vue-property-decorator";
-import ProctorBoard from "../components/game/ProctorBoard.vue";
 import io from "socket.io-client";
+import ProctorBoard from "./common/ProctorBoard.vue";
 
 export default Vue.component("create-join", {
   name: "CreateJoin",

@@ -31,8 +31,8 @@
 import { Vue } from "vue-property-decorator";
 import io from "socket.io-client";
 import { Player } from "../types/player";
-import WaitingPersona from "./WaitingPersona.vue";
-import ProctorBoard from "./game/ProctorBoard.vue";
+import WaitingPersona from "../components/WaitingPersona.vue";
+import ProctorBoard from "../components/common/ProctorBoard.vue";
 
 // todo: use vuetify https://vuetifyjs.com/en/components/icons/
 
