@@ -25,6 +25,7 @@ export default Vue.component("proctor-board", {
 }
 
 .highlighted {
+  transition: all 0.5s;
   background-color: #d3f18b;
 }
 </style>

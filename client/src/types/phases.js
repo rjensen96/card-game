@@ -32,7 +32,7 @@ const phases = [
 
 const rjSpecial = [
   [
-    { pattern: "color", size: 4, cards: [] },
+    { pattern: "color", size: 5, cards: [] },
     { pattern: "run", size: 3, cards: [] },
   ],
   [{ pattern: "run", size: 6, cards: [] }],

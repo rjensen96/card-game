@@ -19,7 +19,7 @@
 
         <!-- Render blank cards if phase doesn't have cards played -->
         <div v-if="!phaseItem.cards.length" class="cards">
-          <div class="tableCard" v-for="(card, x) in phaseItem.size" :key="x" />
+          <div class="dummyCard" v-for="(card, x) in phaseItem.size" :key="x" />
         </div>
 
         <!-- Render cards played on phase if they exist -->
@@ -192,13 +192,23 @@ export default Vue.component("table-set", {
       display: flex;
     }
 
-    .tableCard {
+    /* THIS IS CONFUSING, BUT...
+      The css for rendering these cards is split between here and PhaseCard.
+      This class handles the white placeholder cards.
+      Any actual card is rendered by PhaseCard.vue
+      But... size is also specified in the css over there.
+
+      To fix this, size should probably be a prop so that this component can control it.
+    */
+    .dummyCard {
       height: 60px;
       width: 42px;
-      background-color: white;
+      color: white;
       border-radius: 5px;
       margin: 5px 4px;
+      background-color: white;
       border: 1px solid #d1d1d1;
+      padding: 3px;
     }
   }
 }

@@ -1,6 +1,6 @@
 <template>
   <div :class="cardClass" :id="this.cardData.key" @dragstart="startDrag">
-    <p :class="colorClass">{{ this.cardData.text }}</p>
+    <p>{{ this.cardData.text }}</p>
   </div>
 </template>
 
@@ -26,7 +26,7 @@ export default Vue.component("phase-card", {
       }
     },
     cardClass(): string {
-      return this.baseClass + " " + this.selectedClass;
+      return this.baseClass + " " + this.selectedClass + " " + this.colorClass;
     },
     selectedClass(): string {
       const { selectedCardKeys } = this.$store.state;
@@ -45,47 +45,73 @@ export default Vue.component("phase-card", {
 <style lang="scss" scoped>
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap");
 
+$red-card: #f03a15;
+$blue-card: #7184fa;
+$yellow-card: #e8d631;
+$green-card: #2bd670;
+
+$orange-card: #ffb900;
+$pink-card: #e024d4;
+
 .red {
-  color: rgb(255, 36, 36);
+  background-color: $red-card;
+  border: 4px solid $red-card;
 }
 
 .blue {
-  color: rgb(22, 33, 136);
+  background-color: $blue-card;
+  border: 4px solid $blue-card;
 }
 
 .yellow {
-  color: rgb(237, 43, 255);
+  background-color: $yellow-card;
+  border: 4px solid $yellow-card;
 }
 
 .green {
-  color: rgb(70, 243, 70);
+  background-color: $green-card;
+  border: 4px solid $green-card;
+}
+
+.black {
+  background: linear-gradient(335deg, $orange-card 0%, $pink-card 70%);
+  padding: 4px;
 }
 
 .gameCard {
-  height: 100px;
-  min-width: 70px;
+  height: 90px;
+  min-width: 60px;
   margin: 0px 5px;
   display: flex;
   border-radius: 5px;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #dddddd;
+  // box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  // border: 1px solid #dddddd;
   user-select: none;
 
   p {
     margin: auto;
     font-size: 40px;
     font-family: "Roboto", Arial, sans-serif;
+    color: rgb(255, 255, 255);
   }
 }
 
 .tableCard {
-  height: 75px;
-  width: 53px;
-  background-color: white;
+  height: 60px;
+  width: 42px;
+  // background-color: white;
   border-radius: 5px;
   margin: 5px 4px;
-  border: 1px solid #d1d1d1;
+  color: white;
+  // border: 1px solid #d1d1d1;
+
   display: flex;
+
+  &.white {
+    background-color: white;
+    border: 1px solid #d1d1d1;
+  }
+
   p {
     margin: auto;
     font-size: 30px;
@@ -94,6 +120,11 @@ export default Vue.component("phase-card", {
 }
 
 .selected {
-  background-color: rgb(255, 255, 164);
+  // background-color: rgb(255, 255, 164);
+  box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.4);
+  // padding-bottom: 4px;
+  // margin-bottom: 15px;
+  border: 4px solid yellow;
+  padding: 0px; // fixes discrepancy in size of wild cards (gradients messy)
 }
 </style>

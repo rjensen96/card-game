@@ -340,7 +340,7 @@ function getAllSelectedKeys(prevKeys, marqueeKeys) {
   display: none;
   height: 0px;
   width: 0px;
-  // border: 1px solid rgba(75, 132, 255, 0.4); // this causes blocking behavior.
-  background-color: rgba(75, 132, 255, 0.2);
+  // border: 1px solid rgba(75, 132, 255, 0.6); // this causes blocking behavior.
+  background-color: rgba(75, 132, 255, 0.4);
 }
 </style>
