@@ -1,6 +1,6 @@
 <template>
   <div>
-    <proctor-board />
+    <proctor-board :highlighted="playerIsUp" />
     <div id="game-container">
       <draw-discard />
       <div id="table-sets">
@@ -21,7 +21,7 @@
 import Vue from "vue";
 import DrawDiscard from "../components/game/DrawDiscard.vue";
 import OwnHand from "../components/game/OwnHand.vue";
-import ProctorBoard from "../components/game/ProctorBoard.vue";
+import ProctorBoard from "../components/common/ProctorBoard.vue";
 import TableSet from "../components/game/TableSet.vue";
 import { Player } from "../types/player";
 export default Vue.extend({
@@ -41,6 +41,12 @@ export default Vue.extend({
     },
     roundIsOver(): boolean {
       return this.$store.state.gameState.roundIsOver;
+    },
+    playerIsUp(): boolean {
+      const rv =
+        this.$store.state.gamename === this.$store.state.gameState.playerUp;
+      console.log("playerup: ", rv);
+      return rv;
     },
   },
 });

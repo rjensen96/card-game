@@ -67,8 +67,8 @@ export default Vue.component("phase-card", {
   margin: 0px 5px;
   display: flex;
   border-radius: 5px;
-  box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.15);
-  border: 1px solid #dbdbdb;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #dddddd;
   user-select: none;
 
   p {

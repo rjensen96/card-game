@@ -84,8 +84,6 @@ export default Vue.component("table-set", {
   },
   methods: {
     handleMouseEnter($event, phaseIndex) {
-      console.log("mouse is over", $event);
-      console.log("bounding rect:", $event.target.getBoundingClientRect());
       this.targetSetClientRect = $event.target.getBoundingClientRect();
       this.targetPhaseIndex = phaseIndex;
     },
@@ -149,17 +147,17 @@ export default Vue.component("table-set", {
 <style lang="scss" scoped>
 .container {
   text-align: left;
-  margin: 20px 50px;
+  margin: 10px 40px;
 
   .headerData {
     display: flex;
     justify-content: space-between;
 
     h2 {
-      margin: 0px 20px 10px 20px;
+      margin: 0px 10px 5px 10px;
       padding: 0px;
       font-weight: 500;
-      font-size: 22px;
+      font-size: 18px;
       &.score {
         color: rgb(151, 151, 151);
       }
@@ -195,8 +193,8 @@ export default Vue.component("table-set", {
     }
 
     .tableCard {
-      height: 75px;
-      width: 53px;
+      height: 60px;
+      width: 42px;
       background-color: white;
       border-radius: 5px;
       margin: 5px 4px;
