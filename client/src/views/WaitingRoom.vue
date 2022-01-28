@@ -1,28 +1,32 @@
 <template>
   <div>
-    <p id="roomIdLabel">Room code</p>
-    <h1 id="roomId">{{ getRoomId }}</h1>
-    <proctor-board />
-    <div id="nameForm" v-if="!confirmedName">
-      <input
-        type="text"
-        placeholder="Your name"
-        :maxlength="10"
-        v-model="nameInput"
-      />
-      <button @click="confirmName()">Confirm</button>
-    </div>
-    <div class="personas">
-      <waiting-persona
-        v-for="player in playersInRoom"
-        :player="player"
-        :key="player.key"
-      />
-    </div>
-    <div class="bottomRow">
-      <button id="start" :disabled="startIsDisabled" @click="startGame()">
-        Start
-      </button>
+    <div class="flex">
+      <game-settings />
+      <section id="playerList">
+        <p id="roomIdLabel">Room code</p>
+        <h1 id="roomId">{{ getRoomId }}</h1>
+        <div id="nameForm" v-if="!confirmedName">
+          <input
+            type="text"
+            placeholder="Your name"
+            :maxlength="10"
+            v-model="nameInput"
+          />
+          <button @click="confirmName()">Confirm</button>
+          <proctor-board />
+        </div>
+        <div class="personas">
+          <waiting-persona
+            v-for="player in playersInRoom"
+            :player="player"
+            :key="player.key"
+          />
+        </div>
+
+        <button id="start" :disabled="startIsDisabled" @click="startGame()">
+          Start
+        </button>
+      </section>
     </div>
   </div>
 </template>
@@ -31,14 +35,14 @@
 import { Vue } from "vue-property-decorator";
 import io from "socket.io-client";
 import { Player } from "../types/player";
-import WaitingPersona from "../components/WaitingPersona.vue";
+import WaitingPersona from "../components/waiting-room/WaitingPersona.vue";
 import ProctorBoard from "../components/common/ProctorBoard.vue";
+import GameSettings from "../components/waiting-room/GameSettings.vue";
 
 // todo: use vuetify https://vuetifyjs.com/en/components/icons/
 
 export default Vue.component("waiting-room", {
   name: "WaitingRoom",
-
   data() {
     return {
       socket: io(),
@@ -48,6 +52,7 @@ export default Vue.component("waiting-room", {
   components: {
     WaitingPersona,
     ProctorBoard,
+    GameSettings,
   },
   computed: {
     getRoomId(): string {
@@ -108,6 +113,10 @@ export default Vue.component("waiting-room", {
   margin: 10px 0px 50px 0px;
 }
 
+#playerList {
+  width: 100%;
+}
+
 #nameForm {
   p {
     font-size: 20px;
@@ -123,6 +132,10 @@ export default Vue.component("waiting-room", {
   }
 }
 
+.flex {
+  display: flex;
+}
+
 .bottomRow {
   position: fixed;
   bottom: 50px;
@@ -131,15 +144,16 @@ export default Vue.component("waiting-room", {
 
 .personas {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  margin-bottom: 40px;
 }
 
 #start {
-  margin: 0px auto;
-  height: 100px;
-  width: 200px;
-  font-size: 50px;
-  bottom: 50px;
+  // margin: 0px auto;
+  height: 80px;
+  width: 150px;
+  font-size: 40px;
 }
 
 #start:disabled {

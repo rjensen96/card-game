@@ -29,21 +29,6 @@ new Vue({
     connect: function () {
       console.log("websocket connected");
     },
-    // roomNotification: function (data) {
-    //   console.log("roomNotification:", data);
-    // },
-    // joinConfirmation: function (data) {
-    //   console.log("joinConfirmation:", data);
-    // },
-    // createConfirmation: function (data) {
-    //   console.log("createConfirmation:", data);
-    // },
-    // joinRejection: function (data) {
-    //   console.log("JOIN REJECTED:", data.reason);
-    // },
-    // gameStarted: function (data) {
-    //   console.log("gamestarted");
-    // },
   },
   render: (h) => h(App),
 }).$mount("#app");

@@ -11,7 +11,8 @@
 
 <script>
 import { Vue } from "vue-property-decorator";
-import { Player } from "../types/player";
+import { Player } from "../../types/player";
+
 // todo: use vuetify https://vuetifyjs.com/en/components/icons/
 
 export default Vue.component("waiting-persona", {
@@ -39,17 +40,17 @@ export default Vue.component("waiting-persona", {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100px;
-  width: 100px;
+  height: 60px;
+  width: 60px;
   padding: 10px;
-  margin: 50px 40px 0px 40px;
+  margin: 10px 20px 0px 20px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   background-color: #2c3e50;
   color: white;
 
   span {
-    font-size: 70px;
+    font-size: 40px;
     font-weight: bold;
   }
 }

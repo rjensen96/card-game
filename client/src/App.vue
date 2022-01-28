@@ -61,8 +61,6 @@ body {
 }
 
 #nav {
-  // padding: 30px;
-  // height: 50px;
   position: fixed;
   right: 0px;
   top: 0px;
