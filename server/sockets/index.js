@@ -15,12 +15,15 @@ const {
   setPlayerGamename,
   rotatePlayerUp,
   dealCards,
+  assignPhasesToRoom,
 } = require("../mongo/requests/update");
 const {
   sendDrawDiscard,
   sendGameState,
   sendPlayersOwnData,
+  sendPublicPlayerData,
 } = require("./push-responses");
+const { validateGameSettings } = require("./validation");
 
 // OK NEW NOTES ON CLIENT:
 /*
@@ -51,11 +54,9 @@ function initializeIO(io) {
     handleStartGame(socket);
     handleTakeCard(socket);
     handlePlayCards(socket);
+    handleGameSettings(socket);
   });
 }
-
-// update: below should not be used because this is an http route now.
-// also todo: freaking standardize if you're saying 'user' or 'player', it's too confusing
 
 // todo: consider combining create and join functions (or combining the common pieces)
 // it's not DRY
@@ -154,6 +155,9 @@ function handleSetGamename(socket) {
 function handleStartGame(socket) {
   socket.on("startGame", async (data) => {
     const { roomId, gameStarted } = await getRoomOfPlayerId(data.playerId);
+    const { phases } = data;
+
+    await assignPhasesToRoom(roomId, phases);
 
     if (gameStarted) {
       return; // prevent people from doing dumb stuff like restarting the game randomly.
@@ -169,6 +173,7 @@ function handleStartGame(socket) {
 
     const room = await getRoomByRoomId(roomId); // updated with the dealt cards.
 
+    sendPublicPlayerData(room, io_);
     sendDrawDiscard(room, io_);
     sendGameState(room, io_);
     sendPlayersOwnData(room, io_);
@@ -197,6 +202,21 @@ function handleAdvanceRound(socket) {
   socket.on("advanceRound", async (data) => {
     const room = await getRoomOfPlayerId(data.playerId);
     advanceRound(room, io_);
+  });
+}
+
+function handleGameSettings(socket) {
+  socket.on("gameSettings", async (data) => {
+    const room = await getRoomOfPlayerId(data.playerId);
+    if (validateGameSettings(data)) {
+      const payload = { phases: data.phases };
+      if (data.hasOwnProperty("presetName")) {
+        payload.presetName = data.presetName;
+      }
+      io_.to(room.roomId).emit("gameSettings", payload); // simply broadcast.
+    } else {
+      console.log("settings failed!");
+    }
   });
 }
 

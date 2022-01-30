@@ -1,5 +1,6 @@
 import { getEmptyCardArray, Card } from "@/types/card";
 import { getEmptyChatMessageArray } from "@/types/chat-message";
+import { getDefaultPhases } from "@/types/phases";
 import { getEmptyPlayerArray, Player } from "@/types/player";
 import _ from "lodash";
 import Vue from "vue";
@@ -14,8 +15,7 @@ export default new Vuex.Store({
     drawCard: null,
     gamename: "",
     hand: getEmptyCardArray(),
-    // phase: {},
-    // phaseNumber: 0,
+    isCreator: false,
     playersInRoom: getEmptyPlayerArray(),
     playerId: "",
     points: 0,
@@ -23,6 +23,11 @@ export default new Vuex.Store({
     roomId: "",
     gameState: null,
     selectedCardKeys: getBinaryRecordset(),
+    gameSettings: {
+      phases: getDefaultPhases(),
+      presetName: "classic",
+      renderKey: Math.random(),
+    },
   },
   mutations: {
     addPlayer(state, gamename) {
@@ -36,6 +41,9 @@ export default new Vuex.Store({
     },
     setGamename(state, gamename) {
       state.gamename = gamename;
+    },
+    setIsCreator(state, value) {
+      state.isCreator = value;
     },
     setPlayersInRoom(state, playersInRoom) {
       state.playersInRoom = playersInRoom;
@@ -63,12 +71,6 @@ export default new Vuex.Store({
     setPoints(state, points) {
       state.points = points;
     },
-    // setPhase(state, phase) {
-    //   state.phase = phase;
-    // },
-    // setPhaseNumber(state, phaseNumber) {
-    //   state.phaseNumber = phaseNumber;
-    // },
     setPlayerId(state, playerId) {
       state.playerId = playerId;
     },
@@ -81,6 +83,13 @@ export default new Vuex.Store({
       }
       state.gameState = gameState;
     },
+    setGameSettings(state, gameSettings) {
+      state.gameSettings = {
+        ...state.gameSettings,
+        ...gameSettings,
+        renderKey: Math.random(),
+      };
+    },
     addChatMessage(state, data) {
       state.chats.push(data);
     },
@@ -92,16 +101,14 @@ export default new Vuex.Store({
     SOCKET_chatMessage({ commit }, data) {
       commit("addChatMessage", data);
     },
-    SOCKET_createConfirmation({ commit }, data) {
-      commit("setRoomId", data.roomId);
-      const playersToAdd = getPlayerArrayFromData(data.roomPlayerData);
-      commit("setPlayersInRoom", playersToAdd);
-    },
     SOCKET_drawDiscard({ commit }, data) {
       commit("setDrawDiscard", data);
     },
     SOCKET_gamenameConfirmation({ commit }, data) {
       commit("setGamename", data.gamename);
+    },
+    SOCKET_gameSettings({ commit }, gameSettings) {
+      commit("setGameSettings", gameSettings);
     },
     SOCKET_gameState({ commit }, gameState) {
       commit("setGameState", gameState);
@@ -153,6 +160,8 @@ function getPlayerArrayFromData(data: Record<string, unknown>[]): Player[] {
     return playerData;
   });
 
+  const phaseNums = playerArray.map((player) => player.phaseNumber);
+  console.log("current phasenums;", phaseNums);
   return playerArray;
 }
 

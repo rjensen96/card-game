@@ -46,11 +46,12 @@ async function createRoom() {
     drawPile,
     discardPile,
     drew: false,
+    numPhases: 0,
     played: false,
     discarded: false,
-    roundIsOver: false,
     gameStarted: false,
     gameIsOver: false,
+    roundIsOver: false,
     lastSeen: new Date(),
   });
 

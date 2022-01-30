@@ -1,34 +1,28 @@
 <template>
   <div class="container">
     <h1>Game Settings</h1>
-    <preset-picker @phase-preset="setAllPhases" />
+    <preset-picker @preset-change="handlePresetChange" />
     <phase-form-block
       v-for="(phase, phaseNumber) in phases"
       :key="phaseNumber"
       :phase="phase"
       :renderKey="renderKey"
-      v-on:phase-data="setPhaseData($event, phaseNumber)"
+      @phase-data="setPhaseData($event, phaseNumber)"
     />
     <span id="estTime">Approx. {{ timeEstimate }}</span>
   </div>
 </template>
 <script>
 import Vue from "vue";
-import { getDefaultPhases } from "../../types/phases";
 import PhaseFormBlock from "./PhaseFormBlock.vue";
 import PresetPicker from "./PresetPicker.vue";
+import _ from "lodash";
 
 export default Vue.component("game-settings", {
   name: "GameSettings",
   components: {
     PhaseFormBlock,
     PresetPicker,
-  },
-  data() {
-    return {
-      phases: getDefaultPhases(),
-      renderKey: Math.random(),
-    };
   },
   computed: {
     timeEstimate() {
@@ -43,19 +37,30 @@ export default Vue.component("game-settings", {
 
       return `${lo} - ${hi} mins (${numPlayers} ${playersText})`;
     },
+    phases() {
+      return this.$store.state.gameSettings.phases;
+    },
+    renderKey() {
+      return this.$store.state.gameSettings.renderKey;
+    },
   },
   methods: {
     setPhaseData($event, phaseNumber) {
+      const newPhases = _.cloneDeep(this.phases);
+      const playerId = this.$store.state.playerId;
+
       if (!$event.length) {
-        this.phases.splice(phaseNumber, 1);
+        newPhases.splice(phaseNumber, 1);
       } else {
-        this.phases[phaseNumber] = $event;
+        newPhases[phaseNumber] = $event;
       }
-      this.renderKey = Math.random();
+      // emit newPhases thru socket
+      this.$socket.emit("gameSettings", { phases: newPhases, playerId });
     },
-    setAllPhases(phases) {
-      this.phases = phases;
-      this.renderKey = Math.random();
+    handlePresetChange(data) {
+      // emit this.phases and phase preset thru socket
+      const playerId = this.$store.state.playerId;
+      this.$socket.emit("gameSettings", { ...data, playerId });
     },
   },
 });

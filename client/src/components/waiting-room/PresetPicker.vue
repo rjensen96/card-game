@@ -1,7 +1,7 @@
 <template>
   <div class="presetWrapper">
     <label for="presets">Preset</label>
-    <select id="presets" @change="handleSelectPreset">
+    <select id="presets" @change="handleSelectPreset" v-model="presetName">
       <option value="classic">Classic</option>
       <option value="classic-odds">Classic - odds</option>
       <option value="classic-evens">Classic - evens</option>
@@ -12,32 +12,43 @@
 
 <script>
 import Vue from "vue";
-import { getDefaultPhases, getRJSpecialPhases } from "../../types/phases";
+import { getDefaultPhases, getRJSpecialPhases } from "../../types/phases.ts";
 export default Vue.component("preset-picker", {
   name: "PresetPicker",
+  computed: {
+    presetName: {
+      get() {
+        return this.$store.state.gameSettings.presetName;
+      },
+      set(value) {
+        const x = 1; // this is just a dummy block. Literally does nothing.
+        // prevents a console.error from showing up about not having a setter. We never use this.
+      },
+    },
+  },
   methods: {
     handleSelectPreset($event) {
       console.log("change", $event.target.value);
       const presetName = $event.target.value;
-      let payload = [];
+      let payload = { presetName, phases: [] };
       switch (presetName) {
         case "classic":
-          payload = getDefaultPhases();
+          payload.phases = getDefaultPhases();
           break;
         case "classic-odds":
-          payload = getDefaultPhases();
-          payload = payload.filter((phase, idx) => idx % 2 == 1);
+          payload.phases = getDefaultPhases();
+          payload.phases = payload.phases.filter((phase, idx) => idx % 2 == 1);
           break;
         case "classic-evens":
-          payload = getDefaultPhases();
-          payload = payload.filter((phase, idx) => idx % 2 == 0);
+          payload.phases = getDefaultPhases();
+          payload.phases = payload.phases.filter((phase, idx) => idx % 2 == 0);
           break;
         case "rj-special":
-          payload = getRJSpecialPhases();
+          payload.phases = getRJSpecialPhases();
           break;
       }
 
-      this.$emit("phase-preset", payload);
+      this.$emit("preset-change", payload);
     },
   },
 });

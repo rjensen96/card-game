@@ -52,6 +52,7 @@ export default Vue.component("create-join", {
       this.$store.commit("setProctorMessage", "");
     },
     createRoom(): void {
+      this.$store.commit("setIsCreator", true);
       this.$store.commit("setProctorMessage", "");
       this.$socket.emit("createRoom");
     },

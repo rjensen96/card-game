@@ -1,3 +1,5 @@
+const { extractPublicRoomData } = require("../mongo/requests/read");
+
 function sendDrawDiscard(room, io) {
   try {
     const draw = room.drawPile.pop() || null;
@@ -42,14 +44,7 @@ function sendPlayersOwnData(room, io) {
 }
 
 function sendPublicPlayerData(room, io) {
-  const roomPlayerData = room.players.map((player) => {
-    return {
-      gamename: player.gamename,
-      points: player.points,
-      phase: player.phases[0],
-      phaseNumber: 11 - player.phases.length,
-    };
-  });
+  const roomPlayerData = extractPublicRoomData(room);
   io.to(room.roomId).emit("roomPlayerData", roomPlayerData);
 }
 

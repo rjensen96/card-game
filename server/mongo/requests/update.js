@@ -30,6 +30,25 @@ async function setPlayerGamename(playerId, gamename) {
   }
 }
 
+async function assignPhasesToRoom(roomId, phases) {
+  try {
+    const room = await RoomModel.findOne({ roomId }).populate("players").exec();
+    room.numPhases = phases.length;
+
+    const promises = [];
+
+    room.players.forEach((player) => {
+      player.phases = phases;
+      promises.push(player.save());
+    });
+    promises.push(room.save());
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 ///////////////////////////////////////
 ///////////   GAMEFLOW    /////////////
 ///////////////////////////////////////
@@ -88,6 +107,7 @@ async function dealCards(roomId) {
 
 module.exports = {
   addPlayerToRoom,
+  assignPhasesToRoom,
   setPlayerGamename,
   rotatePlayerUp,
   dealCards,

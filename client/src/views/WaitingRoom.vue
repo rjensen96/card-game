@@ -47,6 +47,7 @@ export default Vue.component("waiting-room", {
     return {
       socket: io(),
       nameInput: "",
+      prevNumPlayers: 1,
     };
   },
   components: {
@@ -60,6 +61,9 @@ export default Vue.component("waiting-room", {
     },
     playersInRoom(): Player[] {
       return this.$store.state.playersInRoom;
+    },
+    numPlayers(): number {
+      return this.$store.state.playersInRoom.length;
     },
     startIsDisabled(): boolean {
       const players: Player[] = this.$store.state.playersInRoom;
@@ -95,8 +99,23 @@ export default Vue.component("waiting-room", {
     },
     startGame(): void {
       const playerId = this.$store.state.playerId;
-      this.$socket.emit("startGame", { playerId });
+      const phases = this.$store.state.gameSettings.phases;
+      this.$socket.emit("startGame", { playerId, phases });
     },
+  },
+  updated() {
+    // when a new player joins, creator should broadcast the current settings.
+    // this component updates when a new player joins, so we will send the data from here.
+    const { isCreator, playerId } = this.$store.state;
+    if (this.numPlayers > this.prevNumPlayers && isCreator) {
+      // ensure that the update was due to an increase in the number of players (a join)
+      this.prevNumPlayers = this.numPlayers;
+
+      const { phases, presetName } = this.$store.state.gameSettings;
+
+      console.log("sending settings...", phases);
+      this.$socket.emit("gameSettings", { phases, presetName, playerId });
+    }
   },
 });
 </script>

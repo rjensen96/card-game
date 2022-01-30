@@ -174,6 +174,8 @@ export default Vue.component("table-set", {
     padding: 10px;
     background-color: #ededed;
     transition: 200ms;
+    width: 100%;
+    margin: 0px auto;
 
     &:hover {
       background-color: #d3f18b;

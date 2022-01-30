@@ -10,6 +10,7 @@ const RoomSchema = new Schema({
   drawPile: [],
   discardPile: [],
   drew: Boolean,
+  numPhases: Number,
   played: Boolean,
   discarded: Boolean,
   roundIsOver: Boolean,

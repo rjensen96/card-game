@@ -15,17 +15,27 @@ async function getPublicRoomData(roomDocId) {
       .lean()
       .exec();
 
-    return room.players.map((player) => {
-      return {
-        gamename: player.gamename,
-        points: player.points,
-        phase: player.phases[0],
-        phaseNumber: 11 - player.phases.length,
-      };
-    });
+    return extractPublicRoomData(room);
   } catch (error) {
     console.error(error);
   }
+}
+
+/**
+ * This is the single place where we actually extract this data from the room
+ * There is a synchronous and async function that both want this data, so this is the one place where we get the fields.
+ * @param {THE ACTUAL ROOM DOCUMENT} room
+ */
+function extractPublicRoomData(room) {
+  const { numPhases } = room;
+  return room.players.map((player) => {
+    return {
+      gamename: player.gamename,
+      points: player.points,
+      phase: player.phases[0],
+      phaseNumber: numPhases - player.phases.length + 1,
+    };
+  });
 }
 
 async function getPlayerByPlayerId(playerId) {
@@ -69,4 +79,5 @@ module.exports = {
   getPlayerByPlayerId,
   getRoomOfPlayerId,
   getRoomByRoomId,
+  extractPublicRoomData,
 };

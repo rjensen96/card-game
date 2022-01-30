@@ -74,7 +74,6 @@ export default Vue.component("phase-form-block", {
       payload.push(_.cloneDeep(payload[0]));
 
       const totalSize = Number(payload[0].size) + Number(payload[1].size);
-      console.log("totalSize", totalSize);
 
       if (totalSize > 9) {
         if (payload[0].size >= 8) {
@@ -140,6 +139,7 @@ $block-width: 220px;
 
 .phaseBlock {
   display: flex;
+  height: 35px;
   align-content: space-between;
   border-radius: 4px;
   margin: 2px 0px;
@@ -157,7 +157,7 @@ $block-width: 220px;
     justify-content: space-between;
 
     select {
-      font-size: 16px;
+      font-size: 14px;
       font-family: Poppins, "IBM Plex Sans", Avenir, Helvetica, Arial,
         sans-serif;
       text-align: center;
@@ -165,7 +165,7 @@ $block-width: 220px;
       // margin-right: 10px;
     }
     input {
-      font-size: 16px;
+      font-size: 14px;
       font-family: Poppins, "IBM Plex Sans", Avenir, Helvetica, Arial,
         sans-serif;
       text-align: center;
@@ -184,13 +184,14 @@ $block-width: 220px;
 
 .phasePotential {
   // background-color: rgb(74, 255, 74);
+  background-color: #5ce060;
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 3px;
-  color: black;
+  color: white;
   width: 100px;
-  border: 1px solid black;
+  // border: 1px solid black;
   border-radius: 2px;
 
   p {
@@ -205,7 +206,7 @@ $block-width: 220px;
     // color: green;
     border: none;
     color: white;
-    background-color: $btn-green;
+    background-color: #26d12c;
     transition: all 0.3s;
     width: $block-width * 0.8;
   }
@@ -214,7 +215,7 @@ $block-width: 220px;
 .deleteButton {
   margin-right: 15px;
   align-items: center;
-  margin-top: 5px;
+  margin-top: 3px;
   // transition: 0s all;
   &:hover {
     transition: 0.2s all;
