@@ -13,6 +13,8 @@ export default Vue.component("phase-card", {
   computed: {
     colorClass(): string {
       switch (this.cardData.color) {
+        case 0:
+          return "wild";
         case 1:
           return "red";
         case 2:
@@ -49,9 +51,14 @@ $red-card: #f03a15;
 $blue-card: #7184fa;
 $yellow-card: #e8d631;
 $green-card: #2bd670;
+$black-card: #505050;
 
 $orange-card: #ffb900;
 $pink-card: #e024d4;
+
+// todo: there needs to be a "wild" color class, and that's the rainbow thing.
+// then have "black" be just a gray blank thing which is empty.
+// right now an empty discard pile shows the wild color.
 
 .red {
   background-color: $red-card;
@@ -73,9 +80,14 @@ $pink-card: #e024d4;
   border: 4px solid $green-card;
 }
 
-.black {
+.wild {
   background: linear-gradient(335deg, $orange-card 0%, $pink-card 70%);
   padding: 4px;
+}
+
+.black {
+  background-color: $black-card;
+  border: 1px solid black;
 }
 
 .gameCard {
