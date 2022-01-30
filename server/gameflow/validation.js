@@ -51,10 +51,12 @@ function isCardRun(cards) {
     x++;
   }
 
+  // the + 1 adjusts it up so that card[x + 1] is compared to the "required value" of card[x] + 1
   let requiredValue = cards[x].value - x + 1;
 
   // wilds cannot take a run below 1.
-  if (requiredValue < 1) {
+  // required value of 1 means the current value is zero, which is bogus.
+  if (requiredValue <= 1) {
     return false;
   }
 
