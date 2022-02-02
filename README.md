@@ -6,9 +6,7 @@ This app is an implementation of the card game [Phase 10](https://www.unorules.c
 
 Try it out here, hosted on AWS Lightsail: http://52.41.20.112/
 
-![Waiting room](client/src/assets/waiting.png)
-![Main game](client/src/assets/game.png)
-![Winners](client/src/assets/winners.png)
+![Demo](client/src/assets/phase10.gif)
 
 ## Stack
 
@@ -16,9 +14,8 @@ This project has a Vue frontend and an Express/Node.js backend with Mongo db. Al
 
 ## Future ideas & contributing
 
-A couple features I'd like to add:
+Features I'd like to add:
 
-- A form when a player creates a room which allows them to customize the number of phases and the phases themselves. The game can be long to play, so it would be fun to allow custom configurations.
 - In-game chat between participants in a room. This was partially implemented in the server side but I spent my time elsewhere.
 
 If you want to contribute, clone the project and submit a pull request.
