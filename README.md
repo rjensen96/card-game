@@ -4,8 +4,6 @@ Join a room with your friends and play a card game together!
 
 This app is an implementation of the card game [Phase 10](https://www.unorules.com/phase-10-rules/). This is an education-related project that I did on my 2021 winter break. Please don't sue me if you're with Mattel :)
 
-Try it out here, hosted on AWS Lightsail: http://52.41.20.112/
-
 ![Demo](client/src/assets/phase10.gif)
 
 ## Stack
